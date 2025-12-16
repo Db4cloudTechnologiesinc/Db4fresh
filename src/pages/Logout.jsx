@@ -1,0 +1,1 @@
+export default function Logout(){return <div className='p-4 text-xl'>Logout Page</div>;}

@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark-green: red;
+  --fresh-green: red;
+  --light-bg: #161617;
+}
+
+body { @apply bg-slate-50 text-slate-900; background-color: #a6e7f8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+/* shimmer */
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: shine 1.4s linear infinite;
+}
+@keyframes shine { to { background-position: 200% 0; } }
+
+.hero-img { max-width: 420px; }
+.header{
+  background-color: #1e201f;
+}
+body{
+  background-color: whitesmoke;
+}
+header{
+  background-color:red;
+}
+.product-card {
+  transition: 0.3s;
+}
+
+product-card {
+  display: inline-block;
+  padding: 12px;
+  border: 1px solid #ddd;
+  margin: 8px;
+  cursor: pointer;
+  /* ensure no other rule overrides opacity/animation */
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+/* Hover triggers animation */
+.product-card:hover {
+  animation: blink 0.8s infinite;
+}
+
+/* Blink keyframes */
+@keyframes blink {
+  0%   { opacity: 1; transform: translateY(0); }
+  25%  { opacity: 0.4; transform: translateY(-2px); }
+  50%  { opacity: 1; transform: translateY(0); }
+  75%  { opacity: 0.6; transform: translateY(-1px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* add vendor prefix for older browsers */
+@-webkit-keyframes blink {
+  0%   { opacity: 1; -webkit-transform: translateY(0); }
+  25%  { opacity: 0.4; -webkit-transform: translateY(-2px); }
+  50%  { opacity: 1; -webkit-transform: translateY(0); }
+  75%  { opacity: 0.6; -webkit-transform: translateY(-1px); }
+  100% { opacity: 1; -webkit-transform: translateY(0); }
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

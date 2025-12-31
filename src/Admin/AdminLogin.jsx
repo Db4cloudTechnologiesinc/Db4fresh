@@ -1,56 +1,66 @@
-// src/admin/login.jsx
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function Login() {
+export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // hard-coded admin credentials (for frontend-only demo)
-    if (email === "admin@db4fresh.com" && pass === "123456") {
-      localStorage.setItem("admin_auth", "true");
-      // navigate to admin dashboard (replace prevents back button issues)
-      navigate("/admin/dashboard", { replace: true });
-    } else {
-      alert("Invalid admin credentials");
+    const res = await fetch("http://localhost:4000/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        password: pass,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.log("Login error:", data);
+      alert(data.message || "Login failed");
+      return;
     }
+
+    // ✅ STORE TOKEN CORRECTLY
+    localStorage.setItem("adminToken", data.token);
+
+    alert("Login successful!");
+    navigate("/admin/dashboard");
   };
 
   return (
-    <div className="h-screen flex justify-center items-center bg-gray-100">
-      <div className="bg-white shadow p-8 w-80 rounded">
-        <h2 className="text-xl font-bold mb-4 text-center">Admin Login</h2>
+    <div className="max-w-md mx-auto p-6 bg-white shadow rounded-lg">
+      <h2 className="text-2xl font-bold mb-4 text-center">Admin Login</h2>
 
-        <form onSubmit={handleLogin}>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full border p-2 mb-3 rounded"
-            autoComplete="username"
-          />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="email"
+          placeholder="Admin Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full border p-3 rounded"
+        />
 
-          <input
-            type="password"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            placeholder="Password"
-            className="w-full border p-2 mb-3 rounded"
-            autoComplete="current-password"
-          />
+        <input
+          type="password"
+          placeholder="Password"
+          value={pass}
+          onChange={(e) => setPass(e.target.value)}
+          className="w-full border p-3 rounded"
+        />
 
-          <button
-            type="submit"
-            className="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700 transition"
-          >
-            Login
-          </button>
-        </form>
-      </div>
+        <button
+          type="submit"
+          className="w-full bg-red-600 text-white p-3 rounded font-semibold"
+        >
+          Login
+        </button>
+      </form>
     </div>
   );
 }

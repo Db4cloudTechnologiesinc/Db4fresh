@@ -1,25 +1,117 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   increaseQty,
   decreaseQty,
   removeFromCart,
 } from "../features/cart/cartSlice";
+import { fetchProducts } from "../features/products/productSlice";
 import { Link } from "react-router-dom";
+import AddressSection from "../components/AddressSection";
+import AddToCartButton from "../components/AddToCartButton";
+import { setAddresses } from "../features/address/addressSlice";
+import { fetchAddressesApi } from "../features/address/addressApi";
+import PaymentBar from "../components/PaymentBar";
+import CheckoutPanel from "../components/CheckoutPanel";
+import EditUserModal from "../components/EditUserModal";
 
 export default function Cart() {
   const dispatch = useDispatch();
-  const items = useSelector((state) => state.cart.items);
 
-  const subtotal = items.reduce(
+  /* ================= REDUX STATE ================= */
+  const items = useSelector((s) => s.cart.items);
+  const products = useSelector((s) => s.products.items);
+  const addresses = useSelector((s) => s.address.addresses || []);
+
+  // Logged-in user (Redux → fallback to localStorage)
+  const authUser =
+    useSelector((s) => s.auth?.user) ||
+    JSON.parse(localStorage.getItem("user") || "{}");
+
+  /* ================= UI STATES ================= */
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [deliveryNote, setDeliveryNote] = useState("");
+  const [selectedInstructions, setSelectedInstructions] = useState([]);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+
+  /* ================= ORDER USER (EDITABLE) ================= */
+  const [orderUser, setOrderUser] = useState({
+    name: authUser?.name || "",
+    phone: authUser?.phone || "",
+  });
+
+  /* ================= SELECTED ADDRESS ================= */
+  const selectedAddress =
+    addresses.find((a) => a.is_default) || addresses[0];
+
+  /* ================= FETCH ADDRESSES ================= */
+  useEffect(() => {
+    fetchAddressesApi().then((res) => {
+      dispatch(setAddresses(res.addresses));
+    });
+  }, [dispatch]);
+
+  /* ================= FETCH PRODUCTS ================= */
+  useEffect(() => {
+    if (!products.length) {
+      dispatch(fetchProducts());
+    }
+  }, [dispatch, products.length]);
+
+  /* ================= BILL CALCULATIONS ================= */
+  const itemTotal = items.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
   );
 
-  if (items.length === 0) {
+  const discount = itemTotal >= 500 ? 50 : 0;
+  const deliveryFee = itemTotal >= 199 ? 0 : 30;
+  const giftWrapFee = giftWrap ? 25 : 0;
+
+  const deliverySavings = deliveryFee === 0 ? 30 : 0;
+  const handlingSavings = 10;
+
+  const totalSavings =
+    discount + deliverySavings + handlingSavings;
+
+  const grandTotal =
+    itemTotal - discount + deliveryFee + giftWrapFee;
+
+  /* ================= PAYMENT HANDLER ================= */
+  const handlePayment = (isCOD) => {
+    if (!selectedAddress) {
+      alert("Please select a delivery address");
+      return;
+    }
+
+    if (!orderUser.name || !orderUser.phone) {
+      alert("Please confirm your name and phone number");
+      return;
+    }
+
+    if (isCOD) {
+      console.log("Order placed with Cash on Delivery");
+    } else {
+      console.log("Redirect to payment gateway");
+    }
+  };
+
+  /* ================= SUGGESTED PRODUCTS ================= */
+  const cartProductIds = items.map((i) => i.productId);
+
+  const suggestedProducts =
+    products
+      ?.filter((p) => !cartProductIds.includes(p.id))
+      .slice(0, 4) || [];
+
+  /* ================= EMPTY CART ================= */
+  if (!items.length) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <p className="text-gray-500 mb-4">Your cart is empty</p>
+        <p className="text-gray-500 mb-4 text-lg">Your cart is empty</p>
         <Link
           to="/"
           className="bg-red-600 text-white px-6 py-2 rounded-lg"
@@ -31,94 +123,272 @@ export default function Cart() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <>
+      {/* Padding for sticky bar */}
+      <div className="pb-32">
+        <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
 
-      {/* LEFT – CART ITEMS */}
-      <div className="md:col-span-2 space-y-4">
-        <h2 className="text-2xl font-semibold mb-4">My Cart</h2>
+          {/* ================= LEFT ================= */}
+          <div className="md:col-span-2 space-y-4">
+            <h2 className="text-2xl font-semibold">My Cart</h2>
 
-        {items.map((item) => (
-          <div
-            key={item.productId}
-            className="flex gap-4 bg-white rounded-xl shadow p-4"
-          >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-24 h-24 object-cover rounded-lg"
-            />
+            {/* CART ITEMS */}
+            {items.map((item) => (
+              <div
+                key={`${item.productId}-${item.variantId}`}
+                className="flex gap-4 bg-white rounded-xl shadow p-4"
+              >
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-24 h-24 object-cover rounded-lg"
+                />
 
-            {/* INFO */}
-            <div className="flex-1">
-              <h3 className="font-semibold">{item.name}</h3>
-              <p className="text-green-600 font-bold mt-1">
-                ₹{item.price}
-              </p>
+                <div className="flex-1">
+                  <h3 className="font-semibold">{item.name}</h3>
 
-              {/* QTY CONTROLS */}
-              <div className="flex items-center gap-3 mt-3">
+                  {item.variantLabel && (
+                    <p className="text-xs text-gray-500">
+                      {item.variantLabel}
+                    </p>
+                  )}
+
+                  <p className="text-green-600 font-bold mt-1">
+                    ₹{item.price}
+                  </p>
+
+                  <div className="flex items-center gap-3 mt-3">
+                    <button
+                      onClick={() =>
+                        dispatch(
+                          decreaseQty({
+                            productId: item.productId,
+                            variantId: item.variantId,
+                          })
+                        )
+                      }
+                      className="px-3 py-1 bg-gray-200 rounded"
+                    >
+                      −
+                    </button>
+
+                    <span className="font-semibold">{item.qty}</span>
+
+                    <button
+                      onClick={() =>
+                        dispatch(
+                          increaseQty({
+                            productId: item.productId,
+                            variantId: item.variantId,
+                          })
+                        )
+                      }
+                      className="px-3 py-1 bg-gray-200 rounded"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 <button
-                  onClick={() => dispatch(decreaseQty(item.productId))}
-                  className="px-3 py-1 bg-gray-200 rounded"
+                  onClick={() =>
+                    dispatch(
+                      removeFromCart({
+                        productId: item.productId,
+                        variantId: item.variantId,
+                      })
+                    )
+                  }
+                  className="text-red-500 text-sm"
                 >
-                  −
-                </button>
-
-                <span className="font-semibold">{item.qty}</span>
-
-                <button
-                  onClick={() => dispatch(increaseQty(item.productId))}
-                  className="px-3 py-1 bg-gray-200 rounded"
-                >
-                  +
+                  Remove
                 </button>
               </div>
+            ))}
+
+            {/* MISSED SOMETHING */}
+            <div className="flex justify-between bg-gray-50 border border-dashed rounded-xl p-4">
+              <p className="text-sm font-medium">Missed something?</p>
+              <Link
+                to="/"
+                className="text-red-600 font-semibold text-sm"
+              >
+                + Add more items
+              </Link>
             </div>
 
-            {/* REMOVE */}
-            <button
-              onClick={() => dispatch(removeFromCart(item.productId))}
-              className="text-red-500 text-sm"
-            >
-              Remove
-            </button>
+            {/* ⭐ SUGGESTED PRODUCTS */}
+            {suggestedProducts.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">
+                  You may also like
+                </h3>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {suggestedProducts.map((p) => {
+                    const img =
+                      p.images?.[0]?.url ||
+                      (typeof p.images?.[0] === "string"
+                        ? p.images[0]
+                        : "/placeholder.png");
+
+                    const v = p.variants?.[0];
+                    const price = v?.price || p.price || 0;
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="bg-white rounded-lg shadow p-3"
+                      >
+                        <Link to={`/product/${p.id}`}>
+                          <img
+                            src={img}
+                            alt={p.name}
+                            className="w-full h-24 object-contain mb-2"
+                          />
+                          <p className="text-sm font-medium line-clamp-2">
+                            {p.name}
+                          </p>
+                        </Link>
+
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-bold text-sm">
+                            ₹{price}
+                          </span>
+
+                          <AddToCartButton
+                            productId={p.id}
+                            variantId={v?.id}
+                            name={p.name}
+                            price={price}
+                            image={img}
+                            variantLabel={v?.variant_label}
+                            stock={v?.stock ?? 0}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        ))}
-      </div>
 
-      {/* RIGHT – SUMMARY */}
-      <div className="bg-white rounded-xl shadow p-6 h-fit">
-        <h3 className="text-lg font-semibold mb-4">Price Details</h3>
+          {/* ================= RIGHT ================= */}
+          <div className="space-y-4">
+            {/* 🎁 GIFT WRAP */}
+<div className="bg-white rounded-xl shadow p-4 flex justify-between items-center">
+  <div>
+    <p className="font-medium">Gift wrap this order</p>
+    <p className="text-xs text-gray-500">
+      Make it special
+    </p>
+  </div>
 
-        <div className="flex justify-between text-sm mb-2">
-          <span>Subtotal</span>
-          <span>₹{subtotal}</span>
-        </div>
+  <button
+    onClick={() => setGiftWrap(!giftWrap)}
+    className={`w-12 h-6 rounded-full ${
+      giftWrap ? "bg-green-500" : "bg-gray-300"
+    } relative`}
+  >
+    <span
+      className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
+        giftWrap ? "right-1" : "left-1"
+      }`}
+    />
+  </button>
+</div>
 
-        <div className="flex justify-between text-sm mb-2">
-          <span>Delivery</span>
-          <span className="text-green-600">Free</span>
-        </div>
 
-        <hr className="my-3" />
+            {/* SAVINGS ON THIS ORDER */}
+<div className="bg-green-50 border border-green-200 rounded-xl p-4">
+  <div className="flex justify-between mb-3">
+    <p className="font-semibold">Savings on this order</p>
+    <span className="bg-green-600 text-white px-3 py-1 rounded-lg">
+      ₹{totalSavings}
+    </span>
+  </div>
 
-        <div className="flex justify-between font-bold text-lg">
-          <span>Total</span>
-          <span>₹{subtotal}</span>
-        </div>
-
-        {/* <button className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-lg font-semibold">
-          
-          Proceed to Checkout
-        </button> */}
-        <Link
-  to="/checkout"
-  className="block text-center w-full mt-6 bg-red-600 text-white py-3 rounded-xl text-lg font-semibold"
->
-  Proceed to Checkout
-</Link>
-      </div>
+  <div className="text-sm space-y-1">
+    <div className="flex justify-between">
+      <span>Discount on MRP</span>
+      <span>₹{discount}</span>
     </div>
+    <div className="flex justify-between">
+      <span>FREE delivery savings</span>
+      <span>₹{deliverySavings}</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Handling fee savings</span>
+      <span>₹{handlingSavings}</span>
+    </div>
+  </div>
+</div>
+
+
+           {/* BILL SUMMARY */}
+<div className="bg-white rounded-xl shadow p-6">
+  <h3 className="text-lg font-semibold mb-4">Bill Summary</h3>
+
+  <div className="flex justify-between text-sm">
+    <span>Item Total</span>
+    <span>₹{itemTotal}</span>
+  </div>
+
+  <div className="flex justify-between text-sm text-green-600">
+    <span>Total Savings</span>
+    <span>-₹{totalSavings}</span>
+  </div>
+
+  <div className="flex justify-between text-sm">
+    <span>Delivery Fee</span>
+    <span>{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+  </div>
+
+  {giftWrap && (
+    <div className="flex justify-between text-sm">
+      <span>Gift Wrap</span>
+      <span>₹25</span>
+    </div>
+  )}
+
+  <hr className="my-3" />
+
+  <div className="flex justify-between font-bold text-lg">
+    <span>Grand Total</span>
+    <span>₹{grandTotal}</span>
+  </div>
+</div>
+
+
+            {/* ✅ ZEPTO STYLE CHECKOUT PANEL */}
+            <CheckoutPanel
+              totalAmount={grandTotal}
+              address={selectedAddress}
+              user={orderUser}
+              onEditUser={() => setShowEditUser(true)}
+              onChangeAddress={() => setShowAddressModal(true)}
+              onPay={() => handlePayment(paymentMethod === "COD")}
+            />
+          </div>
+        </div>
+      </div>
+{showAddressModal && (
+  <AddressSection
+    onClose={() => setShowAddressModal(false)}
+    onSelect={(addr) => {
+      // 🔥 here you can call API or redux later
+      // setDefaultAddressApi(addr.id)
+      setShowAddressModal(false);
+    }}
+    onAddAddress={() => {
+      setShowAddressModal(false);
+      // open add address modal here
+    }}
+  />
+)}
+
+      
+    </>
   );
 }

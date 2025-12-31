@@ -1,88 +1,289 @@
-import axios from "axios";
 
+// import axios from "axios";
+// import { useState, useEffect } from "react";
+// import { Link } from "react-router-dom";
+// import { useSelector } from "react-redux";
+// import LocationModal from "./LocationModal";
+// import SearchSuggestions from "./SearchSuggestions";
+// import OfferStrip from "./OfferStrip";
+// import db4freshlogo from "../Assets/Db4freshlogo.png";
+// import { BsThreeDotsVertical } from "react-icons/bs";
+// import { FaHeart } from "react-icons/fa";
+
+// export default function Header() {
+//   const user = JSON.parse(localStorage.getItem("user"));
+//   const [locOpen, setLocOpen] = useState(false);
+//   const [query, setQuery] = useState("");
+//   const [menuOpen, setMenuOpen] = useState(false);
+//   const [location, setLocation] = useState("Select Location");
+
+//   /* LOAD DEFAULT ADDRESS */
+//   useEffect(() => {
+//     const loadDefault = async () => {
+//       try {
+//         const token = localStorage.getItem("token");
+//         if (!token) return;
+
+//         const res = await axios.get(
+//           "http://localhost:4000/api/addresses",
+//           {
+//             headers: { Authorization: `Bearer ${token}` },
+//           }
+//         );
+
+//         const list = Array.isArray(res.data)
+//           ? res.data
+//           : res.data.addresses || [];
+
+//         const def = list.find((a) => a.is_default);
+//         if (def) setLocation(def.address);
+//       } catch (err) {
+//         console.error("Header address error:", err.response?.data);
+//       }
+//     };
+
+//     loadDefault();
+//   }, []);
+
+//   const cartCount = useSelector((s) =>
+//     s.cart.items.reduce((a, b) => a + b.qty, 0)
+//   );
+//   const wishlistCount = useSelector(
+//     (s) => s.wishlist?.items?.length || 0
+//   );
+//   const products = useSelector((s) => s.products.items);
+
+//   return (
+//     <>
+//       <OfferStrip />
+
+//       <header className="bg-red-600 sticky top-0 z-50">
+//         <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
+
+//           {/* LOGO */}
+//           <Link to="/" className="flex-shrink-0">
+//             <img
+//               src={db4freshlogo}
+//               alt="logo"
+//               className="w-10 h-10 rounded-full"
+//             />
+//           </Link>
+
+//           {/* LOCATION */}
+//           <button
+//             onClick={() => setLocOpen(true)}
+//             className="hidden sm:flex items-center text-xs bg-red-500 px-3 py-2 rounded-lg text-white hover:bg-red-400"
+//           >
+//             {location}
+//           </button>
+
+//           {/* SEARCH */}
+//           <div className="relative flex-1 hidden sm:block">
+//             <input
+//               value={query}
+//               onChange={(e) => setQuery(e.target.value)}
+//               placeholder="Search for milk, fruits, snacks..."
+//               className="w-full px-4 py-2 rounded-xl text-sm outline-none"
+//             />
+
+//             {query && (
+//               <SearchSuggestions
+//                 results={products.filter((p) =>
+//                   p.name.toLowerCase().includes(query.toLowerCase())
+//                 )}
+//                 onSelect={(name) => setQuery(name)}
+//               />
+//             )}
+//           </div>
+
+//           {/* RIGHT ACTIONS */}
+//           <div className="flex items-center gap-4 text-white ml-auto">
+
+//             <Link to="/wishlist" className="flex items-center gap-1 text-sm">
+//               <FaHeart />
+//               <span>{wishlistCount}</span>
+//             </Link>
+
+//             <Link to="/cart" className="text-sm font-medium">
+//               Cart ({cartCount})
+//             </Link>
+
+//             {/* USER / MENU */}
+//             <div
+//               className="relative cursor-pointer"
+//               onClick={() => setMenuOpen(!menuOpen)}
+//             >
+//               <BsThreeDotsVertical />
+
+//               {menuOpen && (
+//                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
+//                   {user ? (
+//                     <>
+//                       <p className="px-4 py-2 text-xs text-gray-500">
+//                         Hi, {user.name}
+//                       </p>
+//                       <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100">
+//                         My Orders
+//                       </Link>
+//                       {/* <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">
+//                         Profile
+//                       </Link> */}
+//                       <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">My Profile</Link>
+//                       <button
+//                         onClick={() => {
+//                           localStorage.clear();
+//                           window.location.reload();
+//                         }}
+//                         className="w-full text-left px-4 py-2 hover:bg-gray-100"
+//                       >
+//                         Logout
+//                       </button>
+//                     </>
+//                   ) : (
+//                     <Link
+//                       to="/auth"
+//                       className="block px-4 py-2 hover:bg-gray-100"
+//                     >
+//                       Login
+//                     </Link>
+//                   )}
+//                 </div>
+//               )}
+//             </div>
+
+//           </div>
+//         </div>
+//       </header>
+
+//       {/* LOCATION MODAL */}
+//       {locOpen && (
+//         <LocationModal
+//           isOpen={locOpen}
+//           onClose={() => setLocOpen(false)}
+//           onSelect={(loc) => {
+//             setLocation(loc);
+//             localStorage.setItem("user_location", loc);
+//           }}
+//         />
+//       )}
+//     </>
+//   );
+// }
+
+
+import axios from "axios";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import LocationModal from "./LocationModal";
 import SearchSuggestions from "./SearchSuggestions";
 import OfferStrip from "./OfferStrip";
-import { useSelector } from "react-redux";
 import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 
 export default function Header() {
+
   const [locOpen, setLocOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // ⭐ SHOW SAVED LOCATION IN HEADER
   const [location, setLocation] = useState("Select Location");
 
+  /* ================= LOAD DEFAULT ADDRESS ================= */
   useEffect(() => {
-  const loadDefault = async () => {
-    const res = await axios.get("http://localhost:4000/api/addresses", {
-      headers: { "x-user-id": "user123" },
-    });
+    const loadDefault = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+const token = user?.token;
 
-    const list = res.data.addresses;
-    const def = list.find((a) => a.is_default);
+if (!token) {
+  setLocation("Select Location");
+  return;
+}
+        if (!token) return;
 
-    if (def) setLocation(def.address);
-  };
+        const res = await axios.get(
+          "http://localhost:4000/api/addresses",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-  loadDefault();
-}, []);
+        let list = [];
 
+        // ✅ Normalize response safely
+        if (Array.isArray(res.data)) {
+          list = res.data;
+        } else if (Array.isArray(res.data.addresses)) {
+          list = res.data.addresses;
+        } else {
+          console.warn("Unexpected address response:", res.data);
+          return;
+        }
 
-  // 🛒 CART COUNT
+        // ✅ Find default address
+        const def = list.find(
+          (a) => a.is_default === 1 || a.is_default === true
+        );
+
+        if (def?.address) {
+          setLocation(def.address);
+        }
+      } catch (err) {
+        console.error(
+          "Header address error:",
+          err.response?.data?.message || err.message
+        );
+      }
+    };
+
+    loadDefault();
+  }, []);
+
+  /* ================= REDUX DATA ================= */
   const cartCount = useSelector((s) =>
     s.cart.items.reduce((a, b) => a + b.qty, 0)
   );
 
-  // ❤️ WISHLIST COUNT
-  const wishlistCount = useSelector((s) => s.wishlist?.items?.length || 0);
+  const wishlistCount = useSelector(
+    (s) => s.wishlist?.items?.length || 0
+  );
 
-  // SEARCH PRODUCTS
   const products = useSelector((s) => s.products.items);
-
-  // ⭐ When user selects a location from modal
-  const handleSelectLocation = (loc) => {
-    setLocation(loc);
-    localStorage.setItem("user_location", loc);
-  };
 
   return (
     <>
       <OfferStrip />
 
-      <header className="bg-red-600 shadow-md">
-        <div className="container flex items-center justify-between py-4 relative">
+      <header className="bg-red-600 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
 
-          {/* LEFT SECTION */}
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <img
-                src={db4freshlogo}
-                alt="logo"
-                className="w-12 h-12 rounded-full"
-              />
-            </Link>
+          {/* LOGO */}
+          <Link to="/" className="flex-shrink-0">
+            <img
+              src={db4freshlogo}
+              alt="logo"
+              className="w-10 h-10 rounded-full"
+            />
+          </Link>
 
-            <button
-              onClick={() => setLocOpen(true)}
-              className="text-sm p-3 hover:bg-red-300 rounded transition "
-            >
-              {location}
-            </button>
-          </div>
+          {/* LOCATION */}
+          <button
+            onClick={() => setLocOpen(true)}
+            className="hidden sm:flex items-center text-xs bg-red-500 px-3 py-2 rounded-lg text-white hover:bg-red-400"
+          >
+            {location}
+          </button>
 
-          {/* SEARCH BAR */}
-          <div className="hidden sm:block relative w-80">
+          {/* SEARCH */}
+          <div className="relative flex-1 hidden sm:block">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for items..."
-              className="px-3 py-2 rounded-md w-full hover:bg-red-300 transition outline-none"
+              placeholder="Search for milk, fruits, snacks..."
+              className="w-full px-4 py-2 rounded-xl text-sm outline-none"
             />
 
             {query && (
@@ -95,58 +296,68 @@ export default function Header() {
             )}
           </div>
 
-          {/* RIGHT SECTION */}
-          <div className="flex items-center gap-4 text-white">
+          {/* RIGHT ACTIONS */}
+          <div className="flex items-center gap-4 text-white ml-auto">
 
-            <Link to="/" className="text-sm p-3 hover:bg-red-300 rounded transition">
-              Home
-            </Link>
-
-            <Link to="/auth" className="text-sm p-3 hover:bg-red-300 rounded transition">
-              Login
-            </Link>
-
-            {/* ❤️ WISHLIST */}
-            <Link
-              to="/wishlist"
-              className="flex items-center gap-1 text-sm p-3 hover:bg-red-300 rounded transition"
-            >
-              <FaHeart size={18} className="text-white" />
+            {/* WISHLIST */}
+            <Link to="/wishlist" className="flex items-center gap-1 text-sm">
+              <FaHeart />
               <span>{wishlistCount}</span>
             </Link>
+            <Link to="/account" className="flex items-center gap-1 text-sm">My Account</Link>
 
-            {/* 🛒 CART */}
-            <Link
-              to="/cart"
-              className="flex items-center gap-1 text-sm p-3 hover:bg-red-300 rounded transition"
-            >
-              Cart <span>{cartCount}</span>
+            {/* CART */}
+            <Link to="/cart" className="text-sm font-medium">
+              Cart ({cartCount})
             </Link>
 
-            {/* 3-DOTS MENU */}
+            {/* USER MENU */}
             <div
-              className="cursor-pointer relative p-3 hover:bg-red-300 rounded transition"
+              className="relative cursor-pointer"
               onClick={() => setMenuOpen(!menuOpen)}
             >
-              <BsThreeDotsVertical size={22} />
+              <BsThreeDotsVertical />
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg py-2 z-50">
-                  <Link to="/orders" className="block px-4 py-2 hover:bg-gray-100">
-                    🛒 My Orders
-                  </Link>
-                  <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">
-                    👤 Profile
-                  </Link>
-                  <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100">
-                    ⚙️ Settings
-                  </Link>
-                  <Link to="/help" className="block px-4 py-2 hover:bg-gray-100">
-                    ❓ Help
-                  </Link>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
-                    🚪 Logout
-                  </button>
+                <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
+                  {user ? (
+                    <>
+                      <p className="px-4 py-2 text-xs text-gray-500">
+                        Hi, {user.name}
+                      </p>
+
+                      <Link
+                        to="/orders"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                      >
+                        My Orders
+                      </Link>
+
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                      >
+                        My Profile
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          localStorage.clear();
+                          window.location.reload();
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      className="block px-4 py-2 hover:bg-gray-100"
+                    >
+                      Login
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
@@ -155,12 +366,15 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ⭐ LOCATION MODAL */}
+      {/* LOCATION MODAL */}
       {locOpen && (
         <LocationModal
           isOpen={locOpen}
           onClose={() => setLocOpen(false)}
-          onSelect={handleSelectLocation}
+          onSelect={(loc) => {
+            setLocation(loc);
+            localStorage.setItem("user_location", loc);
+          }}
         />
       )}
     </>

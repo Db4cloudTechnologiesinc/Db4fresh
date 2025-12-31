@@ -3,6 +3,9 @@ import Footer from "./components/Footer";
 import BottomNav from "./components/BottomNav";
 import FloatingCart from "./components/FloatingCart";
 import AppRoutes from "./routes/AppRoutes";
+import AddressModal from "./components/AddressModal";
+
+
 
 export default function App() {
   return (
@@ -15,13 +18,10 @@ export default function App() {
       <main className="flex-1 px-2 md:px-6 py-4">
         <AppRoutes />
       </main>
-
-      {/* FOOTER & MOBILE NAV */}
       <Footer />
       <BottomNav />
-
-      {/* FLOATING CART BUTTON */}
       <FloatingCart />
+      <AddressModal />
     </div>
   );
 }

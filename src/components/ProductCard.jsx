@@ -1,162 +1,116 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
-// import { FaHeart } from "react-icons/fa";
-// import { useDispatch } from "react-redux";
-// import { addWishlistItem } from "../features/wishlist/wishlistSlice";
-
-// /**
-//  * ✅ SAFELY EXTRACT IMAGE URL
-//  * Handles:
-//  * - images as array of strings
-//  * - images as array of objects { url }
-//  * - images as JSON string
-//  * - old `image` field
-//  */
-// const getImageUrl = (product) => {
-//   // Case 1: images is array
-//   if (Array.isArray(product.images) && product.images.length > 0) {
-//     const img = product.images[0];
-//     if (typeof img === "string") return img;
-//     if (typeof img === "object" && img?.url) return img.url;
-//   }
-
-//   // Case 2: images is JSON string
-//   if (typeof product.images === "string") {
-//     try {
-//       const parsed = JSON.parse(product.images);
-//       if (Array.isArray(parsed) && parsed.length > 0) {
-//         const img = parsed[0];
-//         if (typeof img === "string") return img;
-//         if (typeof img === "object" && img?.url) return img.url;
-//       }
-//     } catch (e) {}
-//   }
-
-//   // Case 3: fallback old image field
-//   if (product.image) return product.image;
-
-//   // Final fallback
-//   return "/placeholder.png";
-// };
-
-// export default function ProductCard({ p }) {
-//   const dispatch = useDispatch();
-//   const productId = p.id || p._id;
-
-//   const img = getImageUrl(p);
-
-//   return (
-//     <div className="bg-white rounded-lg shadow hover:shadow-lg transition relative">
-//       {/* Wishlist */}
-//       <button
-//         onClick={() => dispatch(addWishlistItem(productId))}
-//         className="absolute right-2 top-2 bg-white p-2 rounded-full shadow z-10"
-//       >
-//         <FaHeart className="text-red-600" size={16} />
-//       </button>
-
-//       {/* Product */}
-//       <Link to={`/product/${productId}`}>
-//         <div className="relative w-full h-44 bg-gray-100 overflow-hidden">
-//           <img
-//             src={img}
-//             alt={p.name}
-//             onError={(e) => (e.target.src = "/placeholder.png")}
-//             className="w-full h-full object-cover"
-//           />
-//         </div>
-
-//         <div className="p-3">
-//           <h3 className="text-sm font-semibold line-clamp-2">
-//             {p.name}
-//           </h3>
-
-//           <div className="mt-2 text-red-600 font-bold">
-//             ₹{p.price || p.variants?.[0]?.price || "—"}
-//           </div>
-//         </div>
-//       </Link>
-
-//       <div className="px-3 pb-3">
-//         <button className="w-full bg-red-600 text-white py-2 rounded">
-//           Add
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
 import React from "react";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../features/cart/cartSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "../features/wishlist/wishlistSlice";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import AddToCartButton from "./AddToCartButton";
 
-/**
- * SAFELY GET IMAGE
- * supports:
- * - images: string[]
- * - images: [{ url }]
- * - old image field
- */
-const getImageUrl = (product) => {
-  if (Array.isArray(product.images) && product.images.length > 0) {
-    const img = product.images[0];
+/* IMAGE HELPER */
+const getImageUrl = (p) => {
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    const img = p.images[0];
     if (typeof img === "string") return img;
-    if (img?.url) return img.url;
+    if (typeof img === "object" && img.url) return img.url;
   }
-  return product.image || "/placeholder.png";
+  return "/placeholder.png";
 };
 
 export default function ProductCard({ p }) {
   const dispatch = useDispatch();
-  const productId = p.id || p._id;
+  const wishlist = useSelector((s) => s.wishlist.items);
+
+  const productId = p?.id;
+  if (!productId) return null;
 
   const img = getImageUrl(p);
-  const price = p.variants?.[0]?.price || p.price || "—";
+
+  // Default variant (Zepto style → first / lowest)
+  const defaultVariant =
+    Array.isArray(p.variants) && p.variants.length > 0
+      ? p.variants[0]
+      : null;
+
+  const price = defaultVariant?.price || p.price || 0;
+  const variantLabel = defaultVariant?.variant_label || "";
+
+  const isWishlisted = wishlist.some(
+    (i) => i.productId === productId
+  );
+
+  const handleWishlist = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isWishlisted) {
+      dispatch(removeFromWishlist(productId));
+    } else {
+      dispatch(
+        addToWishlist({
+          productId,
+          name: p.name,
+          price,
+          image: img,
+          variantLabel,
+        })
+      );
+    }
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-lg transition">
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition p-3 w-[160px]">
 
-      {/* PRODUCT CLICK */}
+      {/* IMAGE + NAVIGATION */}
       <Link to={`/product/${productId}`}>
-        <div className="w-full h-44 bg-gray-100 overflow-hidden">
+        <div className="relative bg-gray-50 rounded-lg h-28 flex items-center justify-center">
+
+          {/* ❤️ Wishlist */}
+          <button
+            onClick={handleWishlist}
+            className="absolute top-1 right-1 bg-white rounded-full p-1 shadow z-10"
+          >
+            {isWishlisted ? (
+              <FaHeart className="text-red-600" size={14} />
+            ) : (
+              <FaRegHeart className="text-gray-400" size={14} />
+            )}
+          </button>
+
           <img
             src={img}
             alt={p.name}
-            onError={(e) => (e.target.src = "/placeholder.png")}
-            className="w-full h-full object-cover"
+            className="h-24 w-24 object-contain"
           />
-        </div>
-
-        <div className="p-3">
-          <h3 className="text-sm font-semibold line-clamp-2">
-            {p.name}
-          </h3>
-
-          <div className="mt-1 text-red-600 font-bold">
-            ₹{price}
-          </div>
         </div>
       </Link>
 
-      {/* ADD TO CART */}
-      <div className="px-3 pb-3">
-        <button
-          onClick={() =>
-            dispatch(
-              addToCart({
-                productId,
-                name: p.name,
-                price,
-                image: img,
-              })
-            )
-          }
-          className="w-full bg-red-600 text-white py-2 rounded text-sm"
-        >
-          Add
-        </button>
-      </div>
+      {/* NAME */}
+      <h3 className="text-sm font-medium mt-2 line-clamp-2">
+        {p.name}
+      </h3>
 
+      {/* VARIANT */}
+      {variantLabel && (
+        <p className="text-xs text-gray-500 mt-1">
+          {variantLabel}
+        </p>
+      )}
+
+      {/* PRICE + ADD / STEPPER */}
+      <div className="flex items-center justify-between mt-2">
+        <span className="font-bold text-sm">₹{price}</span>
+
+        <AddToCartButton
+          productId={productId}
+          name={p.name}
+          price={price}
+          image={img}
+          variantId={defaultVariant?.id}
+          variantLabel={variantLabel}
+        />
+      </div>
     </div>
   );
 }

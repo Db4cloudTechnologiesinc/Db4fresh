@@ -1,6 +1,5 @@
-
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import {
   FiChevronLeft,
   FiChevronRight,
@@ -8,59 +7,65 @@ import {
   FiPlus,
   FiMinus,
 } from "react-icons/fi";
-import { useDispatch } from "react-redux";
+import { FaHeart, FaRegHeart, FaShareAlt, FaStar } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../features/cart/cartSlice";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "../features/wishlist/wishlistSlice";
+import AddToCartButton from "../components/AddToCartButton";
+import ReviewsSection from "../components/ReviewSection";
+import SimilarProducts from "../components/SimilarProducts";
+import SuggestedProducts from "../components/SuggestedProducts";
 
 export default function ProductDetails() {
-  const dispatch = useDispatch();
   const { id } = useParams();
+  const dispatch = useDispatch();
 
   const [product, setProduct] = useState(null);
+  const [images, setImages] = useState([]);
   const [mainImage, setMainImage] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [qty, setQty] = useState(1);
-
-  // 🔥 Variant state
   const [selectedVariant, setSelectedVariant] = useState(null);
 
+  const wishlist = useSelector((s) => s.wishlist.items);
   const touchStartX = useRef(0);
 
-  // Normalize images
-  const images =
-    product?.images?.map((img) =>
-      typeof img === "string" ? img : img.url
-    ) || [];
-
+  /* ================= FETCH PRODUCT ================= */
   useEffect(() => {
     fetch(`http://localhost:4000/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
 
-        // Set main image
-        const firstImg =
-          data.images?.length > 0
-            ? typeof data.images[0] === "string"
-              ? data.images[0]
-              : data.images[0].url
-            : data.image || "/placeholder.png";
+        const imgs =
+          data.images?.map((img) =>
+            typeof img === "string" ? img : img.url
+          ) || [];
 
-        setMainImage(firstImg);
+        setImages(imgs);
+        setMainImage(imgs[0] || "/placeholder.png");
         setCurrentIndex(0);
 
-        // ✅ Select lowest price variant by default
         if (data.variants?.length > 0) {
-          const lowest = data.variants.reduce((min, v) =>
-            v.price < min.price ? v : min
-          );
-          setSelectedVariant(lowest);
+          setSelectedVariant(data.variants[0]);
         }
       });
   }, [id]);
 
+  if (!product) return null;
+
+  const isWishlisted = wishlist.some(
+    (i) => i.productId === product.id
+  );
+
+  /* ================= IMAGE NAV ================= */
   const nextImage = () => {
+    if (!images.length) return;
     const next = (currentIndex + 1) % images.length;
     setCurrentIndex(next);
     setMainImage(images[next]);
@@ -68,7 +73,9 @@ export default function ProductDetails() {
   };
 
   const prevImage = () => {
-    const prev = (currentIndex - 1 + images.length) % images.length;
+    if (!images.length) return;
+    const prev =
+      (currentIndex - 1 + images.length) % images.length;
     setCurrentIndex(prev);
     setMainImage(images[prev]);
     setZoom(1);
@@ -84,16 +91,14 @@ export default function ProductDetails() {
     if (endX - touchStartX.current > 50) prevImage();
   };
 
-  if (!product) return <div className="p-6 text-center">Loading...</div>;
-
   return (
     <>
       <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-2 gap-12">
 
-        {/* LEFT SIDE */}
+        {/* LEFT IMAGE SECTION */}
         <div className="flex gap-4">
 
-          {/* DESKTOP THUMBNAILS */}
+          {/* THUMBNAILS */}
           <div className="hidden md:flex flex-col gap-3 max-h-[420px] overflow-y-auto">
             {images.map((img, index) => (
               <img
@@ -103,24 +108,74 @@ export default function ProductDetails() {
                   setMainImage(img);
                   setCurrentIndex(index);
                 }}
-                className={`w-20 h-20 object-cover rounded-xl cursor-pointer border-2
-                  ${
-                    currentIndex === index
-                      ? "border-red-500"
-                      : "border-gray-300"
-                  }`}
+                className={`w-20 h-20 object-cover rounded-xl cursor-pointer border-2 ${
+                  currentIndex === index
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
                 alt=""
               />
             ))}
           </div>
 
-          {/* IMAGE */}
-          <div className="flex-1 space-y-4">
+          {/* MAIN IMAGE */}
+          <div className="flex-1">
             <div
               className="relative"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
+              {/* ❤️ + 🔗 ON IMAGE */}
+              <div className="absolute top-4 right-4 flex gap-3 z-10">
+
+                {/* SHARE */}
+                <button
+                  onClick={() =>
+                    navigator.share({
+                      title: product.name,
+                      text: product.description,
+                      url: window.location.href,
+                    })
+                  }
+                  className="bg-white p-2 rounded-full shadow"
+                >
+                  <FaShareAlt size={16} />
+                </button>
+
+                {/* WISHLIST */}
+                <button
+                  onClick={() =>
+                    dispatch(
+                      isWishlisted
+                        ? removeFromWishlist(product.id)
+                        : addToWishlist({
+                            productId: product.id,
+                            name: product.name,
+                            price:
+                              selectedVariant?.price ??
+                              product.price,
+                            image: mainImage,
+                            variantLabel:
+                              selectedVariant?.variant_label,
+                          })
+                    )
+                  }
+                  className="bg-white p-2 rounded-full shadow"
+                >
+                  {isWishlisted ? (
+                    <FaHeart
+                      className="text-red-600"
+                      size={16}
+                    />
+                  ) : (
+                    <FaRegHeart
+                      className="text-gray-400"
+                      size={16}
+                    />
+                  )}
+                </button>
+              </div>
+
               <img
                 src={mainImage}
                 alt={product.name}
@@ -145,102 +200,125 @@ export default function ProductDetails() {
                 </>
               )}
             </div>
-
-            {/* QTY + ADD TO CART */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center border rounded-lg">
-                <button
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  className="px-4 py-2"
-                >
-                  −
-                </button>
-                <span className="px-4 py-2 font-semibold">{qty}</span>
-                <button
-                  onClick={() => setQty((q) => q + 1)}
-                  className="px-4 py-2"
-                >
-                  +
-                </button>
-              </div>
-
-              <button
-                onClick={() =>
-                  dispatch(
-                    addToCart({
-                      productId: product.id || product._id,
-                      name: product.name,
-                      variantId: selectedVariant?.id,
-                      variantLabel: selectedVariant?.label,
-                      price: selectedVariant?.price,
-                      image: mainImage,
-                      qty,
-                    })
-                  )
-                }
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold"
-              >
-                Add to Cart
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT DETAILS SECTION */}
         <div className="bg-white rounded-2xl shadow p-6 space-y-4">
+
           <h1 className="text-3xl font-semibold">{product.name}</h1>
-          <p className="text-gray-500">{product.category}</p>
+          <p className="text-gray-500">
+            Brand: {product.brand}
+          </p>
 
-          {/* ✅ ZEPTO STYLE PRICE */}
-          {selectedVariant && (
-            <div className="text-3xl font-bold text-green-600">
-              ₹{selectedVariant.price}
-              <span className="text-sm text-gray-500 ml-2">
-                / {selectedVariant.label}
-              </span>
-            </div>
-          )}
+          {/* RATING */}
+          <div className="flex items-center gap-2">
+            <FaStar className="text-green-600" />
+            <span className="font-medium">
+              {product.avgRating || "4.2"}
+            </span>
+            <span className="text-gray-500 text-sm">
+              ({product.totalReviews || 0} reviews)
+            </span>
+          </div>
 
-          {/* ✅ VARIANT SELECTOR */}
-          {product.variants?.length > 0 && (
-            <div>
-              <p className="font-medium mb-2">Select Variant</p>
-              <div className="flex gap-3 flex-wrap">
-                {product.variants.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-lg border text-sm
-                      ${
-                        selectedVariant?.id === v.id
-                          ? "border-red-600 bg-red-50 text-red-600"
-                          : "border-gray-300"
-                      }`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <hr />
+          {/* PRICE */}
+          <div className="text-3xl font-bold text-green-600">
+            ₹{selectedVariant?.price ?? product.price}
+          </div>
 
           <p className="text-gray-600">
-            {product.description || "No description available."}
+            {product.description}
           </p>
+          {/* VARIANT SELECTOR */}
+{product.variants?.length > 0 && (
+  <div>
+    <p className="font-medium mb-2">Select Quantity</p>
+    <div className="flex gap-3 flex-wrap">
+      {product.variants.map((v) => (
+        <button
+          key={v.id}
+          onClick={() => setSelectedVariant(v)}
+          className={`px-4 py-2 rounded-lg border text-sm transition ${
+            selectedVariant?.id === v.id
+              ? "border-red-600 bg-red-50 text-red-600"
+              : "border-gray-300 hover:border-gray-400"
+          }`}
+        >
+          {v.variant_label}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
+          {/* HIGHLIGHTS */}
+          {product.highlights && (
+            <div>
+              <h3 className="font-semibold mb-2">
+                Highlights
+              </h3>
+              <ul className="list-disc pl-5 text-sm">
+                {product.highlights
+                  .split("|")
+                  .map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+              </ul>
+            </div>
+          )}
+
+          {/* SELLER */}
+          <div className="bg-gray-50 p-4 rounded-xl">
+            <p className="font-medium">
+              Sold by {product.seller_name}
+            </p>
+            <p className="text-sm text-gray-500">
+              {product.seller_location}
+            </p>
+          </div>
+
+          {/* RETURN POLICY */}
+          <p className="text-sm text-gray-600">
+            Return Policy: {product.return_policy}
+          </p>
+
+          {/* ADD TO CART */}
+          <button
+            onClick={() =>
+              dispatch(
+                addToCart({
+                  productId: product.id,
+                  qty,
+                  price:
+                    selectedVariant?.price ??
+                    product.price,
+                  image: mainImage,
+                  name: product.name,
+                })
+              )
+            }
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold"
+          >
+            Add to Cart
+          </button>
         </div>
       </div>
+
+      {/* OTHER SECTIONS */}
+      <SimilarProducts productId={product.id} />
+      <SuggestedProducts productId={product.id} />
+      <ReviewsSection productId={product.id} />
 
       {/* FULLSCREEN IMAGE */}
       {fullscreen && (
         <div className="fixed inset-0 bg-black z-50 flex flex-col">
           <div className="flex justify-between p-4 text-white">
             <div className="flex gap-3">
-              <button onClick={() => setZoom((z) => Math.min(z + 0.3, 3))}>
+              <button onClick={() => setZoom(z => Math.min(z + 0.3, 3))}>
                 <FiPlus size={22} />
               </button>
-              <button onClick={() => setZoom((z) => Math.max(z - 0.3, 1))}>
+              <button onClick={() => setZoom(z => Math.max(z - 0.3, 1))}>
                 <FiMinus size={22} />
               </button>
             </div>

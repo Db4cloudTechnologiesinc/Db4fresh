@@ -1,61 +1,71 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialState = {
-  items: [], // { productId, name, price, image, qty }
-};
-
-const cartSlice = createSlice({
+const slice = createSlice({
   name: "cart",
-  initialState,
-  reducers: {
+  initialState: { items: [] },
 
-    // ✅ ADD TO CART (RESPECTS QTY)
+  reducers: {
     addToCart: (state, action) => {
       const item = action.payload;
 
       const existing = state.items.find(
-        (i) => i.productId === item.productId
+        (i) =>
+          i.productId === item.productId &&
+          i.variantId === item.variantId
       );
 
-      const qtyToAdd = item.qty || 1;
-
       if (existing) {
-        existing.qty += qtyToAdd;
+        if (existing.qty < item.stock) {
+          existing.qty += item.qty;
+        }
       } else {
         state.items.push({
           ...item,
-          qty: qtyToAdd,
+          qty: 1,
         });
       }
     },
 
-    // ✅ INCREASE QTY
     increaseQty: (state, action) => {
+      const { productId, variantId } = action.payload;
+
       const item = state.items.find(
-        (i) => i.productId === action.payload
+        (i) =>
+          i.productId === productId &&
+          i.variantId === variantId
       );
-      if (item) item.qty += 1;
+
+      if (item && item.qty < item.stock) {
+        item.qty += 1;
+      }
     },
 
-    // ✅ DECREASE QTY (MIN 1)
     decreaseQty: (state, action) => {
+      const { productId, variantId } = action.payload;
+
       const item = state.items.find(
-        (i) => i.productId === action.payload
+        (i) =>
+          i.productId === productId &&
+          i.variantId === variantId
       );
-      if (item && item.qty > 1) item.qty -= 1;
+
+      if (item && item.qty > 1) {
+        item.qty -= 1;
+      }
     },
 
-    // ✅ REMOVE ITEM
     removeFromCart: (state, action) => {
       state.items = state.items.filter(
-        (i) => i.productId !== action.payload
+        (i) =>
+          !(
+            i.productId === action.payload.productId &&
+            i.variantId === action.payload.variantId
+          )
       );
     },
-    // ✅ CLEAR CART
     clearCart: (state) => {
   state.items = [];
 },
-
   },
 });
 
@@ -65,6 +75,6 @@ export const {
   decreaseQty,
   removeFromCart,
   clearCart,
-} = cartSlice.actions;
+} = slice.actions;
 
-export default cartSlice.reducer;
+export default slice.reducer;

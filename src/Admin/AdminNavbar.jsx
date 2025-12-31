@@ -1,3 +1,4 @@
+
 import React from "react";
 
 export default function AdminNavbar() {
@@ -7,11 +8,16 @@ export default function AdminNavbar() {
 
       <div className="flex items-center gap-4">
         <span className="text-gray-600">Hello, Admin</span>
+
         <button
           className="px-3 py-1 bg-red-500 text-white rounded"
           onClick={() => {
+            // sessionStorage.removeItem("admin_auth"); // UPDATED
+            // window.location.href = "/admin/login";
             localStorage.removeItem("admin_auth");
-            window.location.href = "/admin/login";
+localStorage.removeItem("admin_token");
+window.location.href = "/admin/login";
+
           }}
         >
           Logout

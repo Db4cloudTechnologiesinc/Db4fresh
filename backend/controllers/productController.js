@@ -1,4 +1,4 @@
-// controllers/productController.js
+
 import db from "../config/db.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
@@ -53,23 +53,25 @@ export const createProductWithVariants = (req, res, next) => {
   let images = [];
   let variants = [];
 
-  // ✅ parse images safely
+  // parse images
   try {
-    if (typeof d.images === "string") images = JSON.parse(d.images);
-    else if (Array.isArray(d.images)) images = d.images;
+    images =
+      typeof d.images === "string" ? JSON.parse(d.images) : d.images || [];
   } catch {
     images = [];
   }
 
-  // ✅ parse variants safely (THIS FIXES YOUR ISSUE)
+  // parse variants
   try {
-    if (typeof d.variants === "string") variants = JSON.parse(d.variants);
-    else if (Array.isArray(d.variants)) variants = d.variants;
+    variants =
+      typeof d.variants === "string"
+        ? JSON.parse(d.variants)
+        : d.variants || [];
   } catch {
     variants = [];
   }
 
-  console.log("ADMIN VARIANTS 👉", variants); // 🔍 DEBUG
+  console.log("ADMIN VARIANTS RAW 👉", variants);
 
   const productSql = `
     INSERT INTO products (name, category, description, images, active)
@@ -90,8 +92,12 @@ export const createProductWithVariants = (req, res, next) => {
 
       const productId = result.insertId;
 
-      // ✅ no variants → done
-      if (!variants.length) {
+      // ✅ validate variants
+      const validVariants = variants.filter(
+        (v) => v.variant_label && v.price
+      );
+
+      if (!validVariants.length) {
         return res.json({
           message: "Product created (no variants)",
           productId,
@@ -104,14 +110,16 @@ export const createProductWithVariants = (req, res, next) => {
         VALUES ?
       `;
 
-      const values = variants.map((v) => [
+      const values = validVariants.map((v) => [
         productId,
-        v.label,
+        v.variant_label,     // ✅ FIXED
         v.price,
-        v.mrp || null,
-        v.stock || 0,
-        v.sku || null,
+        v.mrp ?? null,
+        v.stock ?? 0,
+        v.sku ?? null,
       ]);
+
+      console.log("FINAL VARIANT VALUES 👉", values);
 
       db.query(variantSql, [values], (verr) => {
         if (verr) return next(verr);
@@ -126,33 +134,59 @@ export const createProductWithVariants = (req, res, next) => {
 };
 
 /* ============================================================
-   3️⃣ GET ALL PRODUCTS (HOME PAGE)
+   3️⃣ GET ALL PRODUCTS + VARIANTS (HOME PAGE)
 ============================================================ */
 export const getProducts = (req, res, next) => {
-  db.query("SELECT * FROM products ORDER BY id DESC", (err, rows) => {
+  const sql = `
+    SELECT 
+      p.*,
+      IF(
+        COUNT(v.id) = 0,
+        JSON_ARRAY(),
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id', v.id,
+            'variant_label', v.variant_label,
+            'price', v.price,
+            'mrp', v.mrp,
+            'stock', v.stock,
+            'sku', v.sku
+          )
+        )
+      ) AS variants
+    FROM products p
+    LEFT JOIN product_variants v
+      ON p.id = v.product_id
+    GROUP BY p.id
+    ORDER BY p.id DESC
+  `;
+
+  db.query(sql, (err, rows) => {
     if (err) return next(err);
 
     const products = rows.map((p) => {
-      let images = [];
-
       try {
-        images = p.images ? JSON.parse(p.images) : [];
+        p.images = p.images ? JSON.parse(p.images) : [];
       } catch {
-        images = [];
+        p.images = [];
       }
 
-      const image =
-        images.length > 0
-          ? typeof images[0] === "string"
-            ? images[0]
-            : images[0].url
+      try {
+        if (typeof p.variants === "string") {
+          p.variants = JSON.parse(p.variants);
+        }
+      } catch {
+        p.variants = [];
+      }
+
+      p.image =
+        p.images.length > 0
+          ? typeof p.images[0] === "string"
+            ? p.images[0]
+            : p.images[0].url
           : null;
 
-      return {
-        ...p,
-        images,
-        image, // thumbnail
-      };
+      return p;
     });
 
     res.json(products);
@@ -160,7 +194,7 @@ export const getProducts = (req, res, next) => {
 };
 
 /* ============================================================
-   4️⃣ GET SINGLE PRODUCT + VARIANTS  ✅ FIXED
+   4️⃣ GET SINGLE PRODUCT + VARIANTS
 ============================================================ */
 export const getProduct = (req, res, next) => {
   const id = req.params.id;
@@ -174,7 +208,7 @@ export const getProduct = (req, res, next) => {
         JSON_ARRAYAGG(
           JSON_OBJECT(
             'id', v.id,
-            'label', v.variant_label,
+            'variant_label', v.variant_label,
             'price', v.price,
             'mrp', v.mrp,
             'stock', v.stock,
@@ -198,14 +232,12 @@ export const getProduct = (req, res, next) => {
 
     const product = rows[0];
 
-    // parse images
     try {
       product.images = product.images ? JSON.parse(product.images) : [];
     } catch {
       product.images = [];
     }
 
-    // parse variants (MySQL may return string)
     try {
       if (typeof product.variants === "string") {
         product.variants = JSON.parse(product.variants);
@@ -247,4 +279,179 @@ export const deleteProduct = (req, res, next) => {
       res.json({ message: "Product deleted" });
     });
   });
+};
+/* ================= PRODUCT DETAILS ================= */
+export const getProductDetails = (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT 
+      p.*,
+      s.name AS seller_name,
+      s.location AS seller_location,
+      IFNULL(AVG(r.rating), 4.2) AS avgRating,
+      COUNT(r.id) AS totalReviews
+    FROM products p
+    LEFT JOIN sellers s ON p.seller_id = s.id
+    LEFT JOIN product_reviews r ON p.id = r.product_id
+    WHERE p.id = ?
+    GROUP BY p.id
+  `;
+
+  db.query(sql, [id], (err, rows) => {
+    if (err) return res.status(500).json([]);
+    res.json(rows[0] || {});
+  });
+};
+
+/* ================= GET REVIEWS (ARRAY ONLY) ================= */
+export const getProductReviews = (req, res) => {
+  const sql = `
+    SELECT rating, comment, created_at
+    FROM product_reviews
+    WHERE product_id = ?
+    ORDER BY created_at DESC
+  `;
+
+  db.query(sql, [req.params.id], (err, rows) => {
+    if (err) return res.json([]);
+    res.json(rows || []);
+  });
+};
+
+/* ================= ADD REVIEW (ONLY PURCHASED USER) ================= */
+export const addProductReview = (req, res) => {
+  const userId = req.user.id;
+  const productId = req.params.id;
+  const { rating, comment } = req.body;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: "Invalid rating" });
+  }
+
+  /* ✅ CHECK IF USER PURCHASED PRODUCT */
+  const purchaseCheckSql = `
+    SELECT id FROM order_items
+    WHERE user_id = ? AND product_id = ?
+    LIMIT 1
+  `;
+
+  db.query(purchaseCheckSql, [userId, productId], (err, result) => {
+    if (err) return res.status(500).json({ message: "Error" });
+
+    if (result.length === 0) {
+      return res.status(403).json({
+        message: "You can review only purchased products"
+      });
+    }
+
+    /* ✅ INSERT REVIEW */
+    const insertSql = `
+      INSERT INTO product_reviews (product_id, user_id, rating, comment)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(
+      insertSql,
+      [productId, userId, rating, comment],
+      (err) => {
+        if (err) return res.status(500).json({ message: "Failed" });
+
+        res.json({ message: "Review added successfully" });
+      }
+    );
+  });
+};
+
+export const getSimilarProducts = (req, res) => {
+  const productId = req.params.id;
+
+  const sql = `
+    SELECT * FROM products
+    WHERE category = (SELECT category FROM products WHERE id = ?)
+    AND id != ?
+    LIMIT 10
+  `;
+
+  db.query(sql, [productId, productId], (err, rows) => {
+    if (err) {
+      console.error("SIMILAR ERROR:", err);
+      return res.status(200).json([]);
+    }
+
+    const products = rows.map((p) => {
+      // ✅ PARSE IMAGES STRING
+      try {
+        p.images = p.images ? JSON.parse(p.images) : [];
+      } catch {
+        p.images = [];
+      }
+
+      // ✅ ADD SINGLE IMAGE FIELD (for frontend safety)
+      p.image =
+        p.images.length > 0
+          ? typeof p.images[0] === "string"
+            ? p.images[0]
+            : p.images[0].url
+          : null;
+
+      return p;
+    });
+
+    res.status(200).json(products);
+  });
+};
+export const getSuggestedProducts = (req, res) => {
+  const productId = req.params.id;
+
+  const sql = `
+    SELECT * FROM products
+    WHERE id != ?
+    ORDER BY RAND()
+    LIMIT 6
+  `;
+
+  db.query(sql, [productId], (err, rows) => {
+    if (err) {
+      console.error("SUGGESTED ERROR:", err);
+      return res.status(200).json([]);
+    }
+
+    const products = rows.map((p) => {
+      // ✅ PARSE IMAGES STRING
+      try {
+        p.images = p.images ? JSON.parse(p.images) : [];
+      } catch {
+        p.images = [];
+      }
+
+      // ✅ ADD SINGLE IMAGE FIELD
+      p.image =
+        p.images.length > 0
+          ? typeof p.images[0] === "string"
+            ? p.images[0]
+            : p.images[0].url
+          : null;
+
+      return p;
+    });
+
+    res.status(200).json(products);
+  });
+};
+export const normalizeProduct = (p) => {
+  try {
+    p.images = p.images ? JSON.parse(p.images) : [];
+  } catch {
+    p.images = [];
+  }
+
+  p.image =
+    p.images.length > 0
+      ? typeof p.images[0] === "string"
+        ? p.images[0]
+        : p.images[0].url
+      : null;
+
+  return p;
 };

@@ -1,187 +1,155 @@
-import Address from "../models/address.js";
-import sequelize from "../config/sequelize.js";
-import { Op } from "sequelize";
-import ServiceablePincode from "../models/ServiceablePincode.js";  // ⭐ REQUIRED
+import db from "../config/db.js";
 
-export const getAddresses = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const list = await Address.findAll({
-      where: { user_id: userId },
-      order: [["is_default", "DESC"], ["created_at", "DESC"]],
-    });
+/* ================= ADD ADDRESS ================= */
+export const addAddress = (req, res) => {
+  const userId = req.user.id;
+  const body = req.body;
 
-    return res.json({ success: true, addresses: list });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
+  console.log("📦 ADDRESS PAYLOAD:", body);
+  console.log("👤 USER ID:", userId);
 
-export const createAddress = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const userId = req.userId;
-    const { type, address, landmark, pincode, is_default } = req.body;
+  const sql = `
+    INSERT INTO user_addresses
+    (user_id, name, phone, address_line2, landmark, city, state, pincode, is_default)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
-    if (!address || !type)
-      return res.status(400).json({ success: false, message: "type and address required" });
+  const values = [
+    userId,
+    body.type || "Home",
+    body.phone || "0000000000",
+    body.address,
+    body.landmark || "",
+    body.city || "NA",
+    body.state || "NA",
+    body.pincode,
+    body.is_default ? 1 : 0,
+  ];
 
-    let created = await Address.create(
-      {
-        user_id: userId,
-        type,
-        address,
-        landmark,
-        pincode,
-        is_default: Boolean(is_default),
-      },
-      { transaction: t }
-    );
+  console.log("🧾 SQL VALUES:", values);
 
-    if (is_default) {
-      await Address.update(
-        { is_default: false },
-        {
-          where: {
-            user_id: userId,
-            id: { [Op.ne]: created.id }, // ⭐ FIXED
-          },
-          transaction: t,
-        }
-      );
-    } else {
-      const hasDefault = await Address.count({
-        where: { user_id: userId, is_default: true },
-      });
-
-      if (!hasDefault) {
-        created.is_default = true;
-        await created.save({ transaction: t });
-      }
-    }
-
-    await t.commit();
-    return res.status(201).json({ success: true, address: created });
-  } catch (err) {
-    await t.rollback();
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-export const updateAddress = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const userId = req.userId;
-    const id = req.params.id;
-    const { type, address, landmark, pincode, is_default } = req.body;
-
-    const addr = await Address.findOne({ where: { id, user_id: userId } });
-    if (!addr) return res.status(404).json({ success: false, message: "Address not found" });
-
-    await addr.update(
-      { type, address, landmark, pincode, is_default: Boolean(is_default) },
-      { transaction: t }
-    );
-
-    if (is_default) {
-      await Address.update(
-        { is_default: false },
-        {
-          where: {
-            user_id: userId,
-            id: { [Op.ne]: id }, // ⭐ FIXED
-          },
-          transaction: t,
-        }
-      );
-    }
-
-    await t.commit();
-    return res.json({ success: true, address: addr });
-  } catch (err) {
-    await t.rollback();
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-export const deleteAddress = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const userId = req.userId;
-    const id = req.params.id;
-
-    const addr = await Address.findOne({ where: { id, user_id: userId } });
-    if (!addr) return res.status(404).json({ success: false, message: "Address not found" });
-
-    const wasDefault = addr.is_default;
-
-    await addr.destroy({ transaction: t });
-
-    if (wasDefault) {
-      const other = await Address.findOne({
-        where: { user_id: userId },
-        order: [["created_at", "DESC"]],
-        transaction: t,
-      });
-
-      if (other) {
-        other.is_default = true;
-        await other.save({ transaction: t });
-      }
-    }
-
-    await t.commit();
-    return res.json({ success: true, message: "Deleted" });
-  } catch (err) {
-    await t.rollback();
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-export const setDefaultAddress = async (req, res) => {
-  const t = await sequelize.transaction();
-  try {
-    const userId = req.userId;
-    const id = req.params.id;
-
-    const addr = await Address.findOne({ where: { id, user_id: userId } });
-    if (!addr) return res.status(404).json({ success: false, message: "Address not found" });
-
-    await Address.update(
-      { is_default: false },
-      { where: { user_id: userId }, transaction: t }
-    );
-
-    addr.is_default = true;
-    await addr.save({ transaction: t });
-
-    await t.commit();
-    return res.json({ success: true, address: addr });
-  } catch (err) {
-    await t.rollback();
-    return res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-export const checkPincodeAvailability = async (req, res) => {
-  try {
-    const { pincode } = req.params;
-    const exists = await ServiceablePincode.findOne({ where: { pincode } });
-
-    if (exists) {
-      return res.json({
-        success: true,
-        available: true,
-        message: "Delivery available in your area 🎉",
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      // 🔥 DO NOT HIDE THIS
+      console.error("🔥 MYSQL INSERT ERROR:", err);
+      return res.status(500).json({
+        mysqlMessage: err.message,
+        mysqlCode: err.code,
+        sqlState: err.sqlState,
       });
     }
 
-    return res.json({
+    res.status(201).json({
       success: true,
-      available: false,
-      message: "Sorry, we do not deliver to this pincode yet ❌",
+      insertId: result.insertId,
     });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+  });
+};
+
+/* ================= GET ADDRESSES ================= */
+export const getAddresses = (req, res) => {
+  const userId = req.user.id;
+
+  db.query(
+    "SELECT * FROM user_addresses WHERE user_id = ?",
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error("GET ADDRESS ERROR:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to fetch addresses" });
+      }
+
+      res.json({
+        success: true,
+        addresses: rows,
+      });
+    }
+  );
+};
+
+/* ================= SET DEFAULT ADDRESS ================= */
+export const setDefaultAddress = (req, res) => {
+  const userId = req.user.id;
+  const addressId = req.params.id;
+
+  db.query(
+    "UPDATE user_addresses SET is_default = false WHERE user_id = ?",
+    [userId],
+    (err) => {
+      if (err) {
+        console.error("RESET DEFAULT ERROR:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to reset default" });
+      }
+
+      db.query(
+        "UPDATE user_addresses SET is_default = true WHERE id = ? AND user_id = ?",
+        [addressId, userId],
+        (err2) => {
+          if (err2) {
+            console.error("SET DEFAULT ERROR:", err2);
+            return res
+              .status(500)
+              .json({ success: false, message: "Failed to set default" });
+          }
+
+          res.json({
+            success: true,
+            message: "Default address updated",
+          });
+        }
+      );
+    }
+  );
+};
+
+/* ================= DELETE ADDRESS ================= */
+export const deleteAddress = (req, res) => {
+  const userId = req.user.id;
+  const addressId = req.params.id;
+
+  db.query(
+    "DELETE FROM user_addresses WHERE id = ? AND user_id = ?",
+    [addressId, userId],
+    (err) => {
+      if (err) {
+        console.error("DELETE ADDRESS ERROR:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to delete address" });
+      }
+
+      res.json({
+        success: true,
+        message: "Address deleted",
+      });
+    }
+  );
+};
+/* ================= CHECK PINCODE ================= */
+export const checkPincode = (req, res) => {
+  const { pincode } = req.params;
+
+  // Simple validation
+  if (!/^\d{6}$/.test(pincode)) {
+    return res.status(400).json({
+      available: false,
+      message: "Invalid pincode format",
+    });
   }
+
+  // Demo serviceable pincodes
+  const serviceablePincodes = ["517619", "500081", "560001"];
+
+  if (serviceablePincodes.includes(pincode)) {
+    return res.json({ available: true });
+  }
+
+  return res.json({
+    available: false,
+    message: "Delivery not available at this pincode",
+  });
 };

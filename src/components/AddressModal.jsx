@@ -6,15 +6,24 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   const [address, setAddress] = useState("");
   const [landmark, setLandmark] = useState("");
   const [pincode, setPincode] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  const token = localStorage.getItem("token");
+
+  /* ================= PREFILL FOR EDIT ================= */
   useEffect(() => {
     if (editData) {
-      setType(editData.type);
-      setAddress(editData.address);
-      setLandmark(editData.landmark);
-      setPincode(editData.pincode);
+      setType(editData.type || "Home");
+      setAddress(editData.address || "");
+      setLandmark(editData.landmark || "");
+      setPincode(editData.pincode || "");
+    } else {
+      setType("Home");
+      setAddress("");
+      setLandmark("");
+      setPincode("");
     }
-  }, [editData]);
+  }, [editData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,31 +33,76 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
       return;
     }
 
-    // ⭐ Pincode availability check
+    if (pincode.length !== 6) {
+      alert("Please enter a valid 6-digit pincode");
+      return;
+    }
+
     try {
-      const res = await axios.get(
+      setLoading(true);
+
+      /* ================= PINCODE CHECK (NO TOKEN) ================= */
+      const checkRes = await axios.get(
         `http://localhost:4000/api/addresses/check/${pincode}`
       );
 
-      if (!res.data.available) {
-        alert(res.data.message);
+      if (!checkRes.data.available) {
+        alert(checkRes.data.message);
+        setLoading(false);
         return;
       }
+
+      /* ================= LOGIN CHECK FOR SAVE ================= */
+      if (!token) {
+        alert("Please login to save address");
+        setLoading(false);
+        return;
+      }
+
+      /* ================= SAVE / UPDATE ADDRESS ================= */
+      const payload = {
+        type,
+        address,
+        landmark,
+        pincode,
+        is_default: editData?.is_default || false,
+      };
+
+      let saveRes;
+
+      if (editData?.id) {
+        // UPDATE ADDRESS
+        saveRes = await axios.put(
+          `http://localhost:4000/api/addresses/${editData.id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else {
+        // ADD NEW ADDRESS
+        saveRes = await axios.post(
+          "http://localhost:4000/api/addresses",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+
+      /* ================= UPDATE UI ================= */
+      onSave(saveRes.data);
+      onClose();
     } catch (err) {
-      console.error(err);
+      console.error("ADDRESS SAVE ERROR:", err);
+      alert("Failed to save address. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    // ⭐ Save to backend (parent will call API)
-    onSave({
-      id: editData?.id, // only for update
-      type,
-      address,
-      landmark,
-      pincode,
-      is_default: editData?.is_default || false,
-    });
-
-    onClose();
   };
 
   return (
@@ -93,10 +147,13 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
         <label className="font-medium">Pincode</label>
         <input
           type="text"
+          maxLength={6}
           className="w-full border p-3 rounded-lg"
-          placeholder="e.g., 500081"
+          placeholder="6-digit pincode"
           value={pincode}
-          onChange={(e) => setPincode(e.target.value)}
+          onChange={(e) =>
+            setPincode(e.target.value.replace(/\D/g, ""))
+          }
         />
 
         {/* Actions */}
@@ -104,6 +161,7 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
           <button
             className="px-4 py-2 bg-gray-200 rounded-lg"
             onClick={onClose}
+            disabled={loading}
           >
             Cancel
           </button>
@@ -111,8 +169,13 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
           <button
             className="px-4 py-2 bg-red-600 text-white rounded-lg"
             onClick={handleSubmit}
+            disabled={loading}
           >
-            {editData ? "Save Changes" : "Add Address"}
+            {loading
+              ? "Saving..."
+              : editData
+              ? "Save Changes"
+              : "Add Address"}
           </button>
         </div>
       </div>

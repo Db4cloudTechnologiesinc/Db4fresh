@@ -1,0 +1,6 @@
+com\db4fresh\backend\BackendApplication.class
+com\db4fresh\backend\repository\ProductRepository.class
+com\db4fresh\backend\config\WebConfig.class
+com\db4fresh\backend\controller\TestController.class
+com\db4fresh\backend\controller\ProductController.class
+com\db4fresh\backend\entity\Product.class

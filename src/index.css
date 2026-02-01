@@ -73,3 +73,100 @@ product-card {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.product-card {
+  width: 190px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  font-family: Inter, sans-serif;
+}
+
+.image-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+}
+
+.image-wrap img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.add-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: 1.5px solid #ff2b85;
+  background: #fff;
+  color: #ff2b85;
+  padding: 4px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.price {
+  background: #2e7d32;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.mrp {
+  text-decoration: line-through;
+  color: #9e9e9e;
+  font-size: 13px;
+}
+
+.discount {
+  color: #2e7d32;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+  line-height: 1.2;
+}
+
+.quantity {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.delivery {
+  font-size: 12px;
+  color: #444;
+  margin-top: 6px;
+}
+/* ===== COMPLETELY HIDE SCROLLBARS (ALL BROWSERS) ===== */
+.hide-scrollbar {
+  scrollbar-width: none !important;     /* Firefox */
+  -ms-overflow-style: none !important;  /* IE & Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+

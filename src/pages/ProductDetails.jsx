@@ -19,6 +19,7 @@ import ReviewsSection from "../components/ReviewSection";
 import SimilarProducts from "../components/SimilarProducts";
 import SuggestedProducts from "../components/SuggestedProducts";
 
+
 export default function ProductDetails() {
   const { id } = useParams();
   const dispatch = useDispatch();

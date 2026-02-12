@@ -1,12 +1,32 @@
-<<<<<<< HEAD
-# Zepto Advanced Frontend (Demo)
-
-## Run locally
-
-1. npm install
-2. npm run dev
-
-This demo includes many UI features (hero slider, offer strip, bottom nav, location modal, search suggestions, horizontal carousels, sticky add-to-cart bar, floating cart, skeleton loaders). The product API calls fallback to seeded data if backend not available.
-=======
 # Db4fresh
->>>>>>> eb63a2a6cc197e6ad0e63e5915a74263a20d3040
+
+## 🛒 Full Stack E-Commerce Grocery Application
+
+Db4fresh is a full-stack grocery e-commerce web application built using:
+
+- ⚛ React (Frontend)
+- 🚀 Node.js + Express (Backend)
+- 🗄 MySQL (Database)
+- 🔐 JWT Authentication
+
+---
+
+## ✨ Features
+
+- User Authentication (Login / Register)
+- Add to Cart & Wishlist
+- Variant-based Stock Management
+- Order Placement & Payment Flow
+- Order History
+- Invoice Download
+- Admin Product Management
+- Stock Deduction System
+
+---
+
+## 🛠 Installation & Setup
+
+### 1️⃣ Clone Repository
+
+```bash
+git clone <https://github.com/swethavemula2001/Db4fresh>

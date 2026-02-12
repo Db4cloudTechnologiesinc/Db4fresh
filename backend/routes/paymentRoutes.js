@@ -1,83 +1,4 @@
-// import express from "express";
-// import crypto from "crypto";
-// import { getRazorpayInstance } from "../config/razorpay.js";
-// import Order from "../models/Order.js";
 
-// const router = express.Router();
-
-// /* ================= CREATE RAZORPAY ORDER ================= */
-// router.post("/create-order", async (req, res) => {
-//   try {
-//     const { amount } = req.body;
-
-//     if (!amount || amount <= 0) {
-//       return res.status(400).json({ error: "Invalid amount" });
-//     }
-
-//     const razorpay = getRazorpayInstance();
-
-//     const razorpayOrder = await razorpay.orders.create({
-//       amount: amount * 100, // INR → paise
-//       currency: "INR",
-//       receipt: "db4fresh_" + Date.now(),
-//     });
-
-//     res.json(razorpayOrder);
-//   } catch (err) {
-//     console.error("CREATE ORDER ERROR:", err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// /* ================= VERIFY PAYMENT ================= */
-// router.post(
-//   "/verify",
-//   express.urlencoded({ extended: true }),
-//   async (req, res) => {
-//     try {
-//       const {
-//         razorpay_order_id,
-//         razorpay_payment_id,
-//         razorpay_signature,
-//         orderId, // 👈 MongoDB Order ID
-//       } = req.body;
-
-//       /* ❌ PAYMENT FAILED / CANCELLED */
-//       if (!razorpay_payment_id) {
-//         return res.redirect("http://localhost:5173/payment-failed");
-//       }
-
-//       /* ================= SIGNATURE VERIFY ================= */
-//       const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-
-//       const expectedSignature = crypto
-//         .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-//         .update(body)
-//         .digest("hex");
-
-//       if (expectedSignature !== razorpay_signature) {
-//         console.error("Signature mismatch");
-//         return res.redirect("http://localhost:5173/payment-failed");
-//       }
-
-//       /* ================= UPDATE ORDER (🔥 MAIN FIX 🔥) ================= */
-//       await Order.findByIdAndUpdate(orderId, {
-//         paymentStatus: "paid",
-//         orderStatus: "confirmed",
-//         paymentId: razorpay_payment_id,
-//       });
-
-//       console.log("Payment verified & order updated:", orderId);
-
-//       res.redirect("http://localhost:5173/order-success");
-//     } catch (err) {
-//       console.error("VERIFY PAYMENT ERROR:", err.message);
-//       res.redirect("http://localhost:5173/payment-failed");
-//     }
-//   }
-// );
-
-// export default router;
 import express from "express";
 import crypto from "crypto";
 import { getRazorpayInstance } from "../config/razorpay.js";
@@ -147,13 +68,15 @@ console.log("QUERY:", req.query);
 
       /* 🔥 FIX 2: correct column names 🔥 */
       await db.query(
-        `UPDATE orders
-         SET payment_status = 'paid',
-             order_status = 'CONFIRMED',
-             payment_id = ?
-         WHERE id = ?`,
-        [razorpay_payment_id, orderId]
-      );
+  `UPDATE orders
+   SET payment_status = 'paid',
+       payment_method = 'ONLINE',
+       order_status = 'PLACED',
+       payment_id = ?
+   WHERE id = ?`,
+  [razorpay_payment_id, orderId]
+);
+
 
       console.log("✅ Payment verified & order updated:", orderId);
 

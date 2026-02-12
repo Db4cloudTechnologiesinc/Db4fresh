@@ -267,6 +267,7 @@ export const getSimilarProducts = async (req, res) => {
   res.json(normalizeProducts(rows));
 };
 
+
 export const getSuggestedProducts = getSimilarProducts;
 
 /* ================= SEARCH ================= */
@@ -282,75 +283,6 @@ export const searchProducts = async (req, res) => {
   res.json(rows);
 };
 
-/* ================= TOP PICKS (HOME) ================= */
-// export const getTopPicks = async (req, res) => {
-//   try {
-//     const [rows] = await db.query(`
-//       SELECT
-//         p.*,
-//         COALESCE(MIN(v.price), 0) AS price,
-//         COALESCE(SUM(v.stock), 0) AS stock
-//       FROM products p
-//       LEFT JOIN product_variants v ON v.product_id = p.id
-//       WHERE p.active = 1
-//       GROUP BY p.id
-//       ORDER BY p.id DESC
-//       LIMIT 10
-//     `);
-
-//     res.json(normalizeProducts(rows));
-//   } catch (err) {
-//     console.error("TOP PICKS ERROR:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-// export const getTopPicks = async (req, res) => {
-//   try {
-//     const [rows] = await db.query(`
-//       SELECT
-//         p.*,
-//         COALESCE(MIN(v.price), 0) AS price,
-//         COALESCE(SUM(v.stock), 0) AS stock
-//       FROM products p
-//       LEFT JOIN product_variants v ON v.product_id = p.id
-//       WHERE p.active = 1 AND p.is_top_pick = 1
-//       GROUP BY p.id
-//       ORDER BY p.updated_at DESC
-//       LIMIT 10
-//     `);
-
-//     res.json(normalizeProducts(rows));
-//   } catch (err) {
-//     console.error("TOP PICKS ERROR:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// export const getTopPicks = async (req, res) => {
-//   try {
-//     const [rows] = await db.query(`
-//       SELECT
-//         p.*,
-//         COALESCE(MIN(v.price), 0) AS price,
-//         COALESCE(SUM(v.stock), 0) AS stock
-//       FROM products p
-//       LEFT JOIN product_variants v ON v.product_id = p.id
-//       WHERE p.active = 1
-//       GROUP BY p.id
-//       ORDER BY 
-//         p.views DESC,
-//         p.created_at DESC
-//       LIMIT 10
-//     `);
-
-//     res.json(normalizeProducts(rows));
-//   } catch (err) {
-//     console.error("TOP PICKS ERROR:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 export const getTopPicks = async (req, res) => {
   try {
     const [rows] = await db.query(`

@@ -1,7 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config(); // ✅ MUST BE FIRST\
+console.log("🔑 ADMIN_SECRET =", process.env.ADMIN_SECRET);
 
-
- import dotenv from "dotenv";
-dotenv.config(); // ✅ MUST BE FIRST
 
 import express from "express";
 import cors from "cors";
@@ -34,7 +34,19 @@ console.log("RAZORPAY:", process.env.RAZORPAY_KEY_ID);
 const app = express();
 
 /* ================= MIDDLEWARE ================= */
-app.use(cors({ origin: "*", allowedHeaders: "*" }));
+// app.use(cors({ origin: "*", allowedHeaders: "*" }));
+app.use(cors({
+  origin: "http://localhost:5173",  // your frontend port
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+app.post("/test-order", (req, res) => {
+  console.log("🔥 TEST ORDER HIT");
+  res.json({ success: true });
+});
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

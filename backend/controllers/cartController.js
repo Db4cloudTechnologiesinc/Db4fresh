@@ -1,166 +1,130 @@
-// import db from "../config/db.js";
 
-// // GET USER CART ITEMS
-// export const getCart = (req, res) => {
-//   const userId = req.user.id;
-
-//   db.query(
-//     `SELECT cart.id, cart.quantity, products.name, products.price, products.image 
-//      FROM cart 
-//      JOIN products ON products.id = cart.product_id 
-//      WHERE cart.user_id = ?`,
-//     [userId],
-//     (err, result) => {
-//       if (err) return res.status(500).send(err);
-
-//       res.json(result);
-//     }
-//   );
-// };
-
-// // ADD TO CART
-// export const addToCart = (req, res) => {
-//   const userId = req.user.id;
-//   const { product_id, quantity } = req.body;
-
-//   // Check if product exists in cart
-//   db.query(
-//     "SELECT * FROM cart WHERE user_id = ? AND product_id = ?",
-//     [userId, product_id],
-//     (err, result) => {
-//       if (result.length > 0) {
-//         // Update quantity
-//         db.query(
-//           "UPDATE cart SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?",
-//           [quantity, userId, product_id]
-//         );
-//         return res.json({ message: "Quantity updated" });
-//       }
-
-//       // Insert new item
-//       db.query(
-//         "INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)",
-//         [userId, product_id, quantity],
-//         (err, result) => {
-//           if (err) return res.status(500).send(err);
-
-//           res.json({ message: "Added to cart" });
-//         }
-//       );
-//     }
-//   );
-// };
-
-// // UPDATE CART QUANTITY
-// export const updateCart = (req, res) => {
-//   const userId = req.user.id;
-//   const { product_id, quantity } = req.body;
-
-//   db.query(
-//     "UPDATE cart SET quantity = ? WHERE user_id = ? AND product_id = ?",
-//     [quantity, userId, product_id],
-//     (err, result) => {
-//       if (err) return res.status(500).send(err);
-
-//       res.json({ message: "Cart updated" });
-//     }
-//   );
-// };
-
-// // REMOVE ITEM FROM CART
-// export const removeFromCart = (req, res) => {
-//   const userId = req.user.id;
-//   const { product_id } = req.params;
-
-//   db.query(
-//     "DELETE FROM cart WHERE user_id = ? AND product_id = ?",
-//     [userId, product_id],
-//     (err, result) => {
-//       if (err) return res.status(500).send(err);
-
-//       res.json({ message: "Item removed" });
-//     }
-//   );
-// };
 import db from "../config/db.js";
 
-// Add item to cart (or increase qty if exists)
-export const addToCart = (req, res) => {
-  const userId = req.user.id;
-  const { productId, qty = 1 } = req.body;
 
-  // check existing
-  db.query(
-    "SELECT * FROM cart WHERE user_id = ? AND product_id = ?",
-    [userId, productId],
-    (err, rows) => {
-      if (err) return res.status(500).json(err);
+export const addToCart = async (req, res) => {
+  try {
+    console.log("🔥 ADD TO CART HIT");
+    console.log("USER:", req.user);
+    console.log("BODY:", req.body);
 
-      if (rows.length > 0) {
-        // update qty
-        const cartId = rows[0].id;
-        db.query(
-          "UPDATE cart SET qty = qty + ? WHERE id = ?",
-          [qty, cartId],
-          (uErr) => {
-            if (uErr) return res.status(500).json(uErr);
-            return res.json({ message: "Cart updated" });
-          }
-        );
-      } else {
-        // insert new
-        db.query(
-          "INSERT INTO cart (user_id, product_id, qty) VALUES (?, ?, ?)",
-          [userId, productId, qty],
-          (iErr) => {
-            if (iErr) return res.status(500).json(iErr);
-            return res.json({ message: "Added to cart" });
-          }
-        );
-      }
+    const userId = req.user.id;
+    const { productId, qty = 1 } = req.body;
+
+    console.log("USER ID USED:", userId);
+
+    const [rows] = await db.query(
+      "SELECT id, qty FROM cart WHERE user_id = ? AND product_id = ?",
+      [userId, productId]
+    );
+
+    console.log("EXISTING ROWS:", rows);
+
+    if (rows.length > 0) {
+      await db.query(
+        "UPDATE cart SET qty = qty + ? WHERE id = ?",
+        [qty, rows[0].id]
+      );
+    } else {
+      await db.query(
+        "INSERT INTO cart (user_id, product_id, qty) VALUES (?, ?, ?)",
+        [userId, productId, qty]
+      );
     }
-  );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("ADD CART ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Get cart for logged-in user (returns product fields + cartId + qty)
-export const getCart = (req, res) => {
-  const userId = req.user.id;
-  const sql = `
-    SELECT c.id AS cartId, c.qty, p.id AS productId, p.name, p.price, p.image, p.description
-    FROM cart c
-    JOIN products p ON p.id = c.product_id
-    WHERE c.user_id = ?
-  `;
-  db.query(sql, [userId], (err, rows) => {
-    if (err) return res.status(500).json(err);
+export const getCart = async (req, res) => {
+  try {
+    console.log("🔥 GET CART HIT");
+    console.log("USER:", req.user);
+
+    const userId = req.user.id;
+
+    const [rows] = await db.query(
+      `SELECT 
+        c.id AS cartId,
+        c.qty,
+        p.id AS productId,
+        p.name,
+        p.price,
+        p.image
+      FROM cart c
+      JOIN products p ON p.id = c.product_id
+      WHERE c.user_id = ?`,
+      [userId]
+    );
+
+    console.log("CART ROWS:", rows);
     res.json(rows);
-  });
+  } catch (err) {
+    console.error("GET CART ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Update cart qty by cartId
-export const updateCartQty = (req, res) => {
-  const { cartId } = req.params;
-  const { qty } = req.body;
-  db.query("UPDATE cart SET qty = ? WHERE id = ?", [qty, cartId], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Qty updated" });
-  });
+
+/**
+ * UPDATE QTY
+ */
+export const updateCartQty = async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    const { qty } = req.body;
+
+    if (qty <= 0) {
+      await db.query("DELETE FROM cart WHERE id = ?", [cartId]);
+    } else {
+      await db.query(
+        "UPDATE cart SET qty = ? WHERE id = ?",
+        [qty, cartId]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Remove from cart by cartId
-export const removeFromCart = (req, res) => {
-  const { cartId } = req.params;
-  db.query("DELETE FROM cart WHERE id = ?", [cartId], (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "Removed from cart" });
-  });
+/**
+ * REMOVE ITEM
+ */
+export const removeFromCart = async (req, res) => {
+  try {
+    const { cartId } = req.params;
+    await db.query("DELETE FROM cart WHERE id = ?", [cartId]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Optional: count endpoint
-export const getCartCount = (req, res) => {
-  const userId = req.user.id;
-  db.query("SELECT SUM(qty) AS count FROM cart WHERE user_id = ?", [userId], (err, rows) => {
-    if (err) return res.status(500).json(err);
-    res.json({ count: rows[0].count || 0 });
-  });
+/**
+ * CART COUNT (HEADER ICON)
+ */
+export const getCartCount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [[row]] = await db.query(
+      "SELECT COALESCE(SUM(qty), 0) AS count FROM cart WHERE user_id = ?",
+      [userId]
+    );
+
+    res.json({ count: row.count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * CLEAR CART (CALL AFTER ORDER SUCCESS)
+ */
+export const clearCart = async (userId) => {
+  await db.query("DELETE FROM cart WHERE user_id = ?", [userId]);
 };

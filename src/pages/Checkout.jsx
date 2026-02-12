@@ -1,204 +1,5 @@
 
-// import React, { useState } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import { clearCart } from "../features/cart/cartSlice";
-// import { useNavigate } from "react-router-dom";
-// import AddressList from "../components/AddressList";
-// import DeliverySlot from "../components/DeliverySlot";
-
-// export default function Checkout() {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-
-//   /* ================= REDUX ================= */
-//   const items = useSelector((s) => s.cart.items);
-//   const addresses = useSelector((s) => s.address.addresses || []);
-//   const token = localStorage.getItem("token");
-
-//   /* ================= LOCAL STATE ================= */
-//   const [paymentMethod, setPaymentMethod] = useState("COD");
-//   const [processing, setProcessing] = useState(false);
-//   const [selectedSlot, setSelectedSlot] = useState(null);
-
-//   const [selectedAddress, setSelectedAddress] = useState(
-//     addresses.find((a) => a.is_default) || addresses[0] || null
-//   );
-
-//   /* ================= TOTAL ================= */
-//   const subtotal = items.reduce(
-//     (sum, item) => sum + Number(item.price || 0) * item.qty,
-//     0
-//   );
-
-//   /* ================= PLACE ORDER ================= */
-//   const placeOrder = () => {
-//     if (!items.length) {
-//       alert("Cart is empty");
-//       return;
-//     }
-
-//     if (!selectedAddress) {
-//       alert("Please select a delivery address");
-//       return;
-//     }
-
-//     if (!selectedSlot) {
-//       alert("Please select a delivery slot");
-//       return;
-//     }
-
-//     // ✅ SAVE CHECKOUT DATA (NO DATA LOSS)
-//     localStorage.setItem(
-//       "checkout_data",
-//       JSON.stringify({
-//         items,
-//         totalAmount: subtotal,
-//         paymentMethod,
-//         addressId: selectedAddress.id,
-//         address_text: selectedAddress.address,
-//         delivery_date: selectedSlot.date,
-//         delivery_slot: selectedSlot.time,
-//       })
-//     );
-
-//     // ✅ PAYMENT HANDLED IN PAYMENT PAGE ONLY
-//     navigate("/payment");
-//   };
-
-//   /* ================= SUBMIT ORDER API (KEPT, NOT REMOVED) ================= */
-//   const submitOrder = async (paymentType) => {
-//     try {
-//       const res = await fetch("http://localhost:4000/api/orders", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           ...(token && { Authorization: `Bearer ${token}` }),
-//         },
-//         body: JSON.stringify({
-//           items,
-//           totalAmount: subtotal,
-//           address_id: selectedAddress?.id || null,
-//           address_text: selectedAddress?.address || "",
-//           delivery_date: selectedSlot?.date,
-//           delivery_slot: selectedSlot?.time,
-//           paymentMethod: paymentType,
-//         }),
-//       });
-
-//       if (!res.ok) {
-//         alert("Order failed ❌");
-//         return false;
-//       }
-
-//       return true;
-//     } catch (err) {
-//       console.error("ORDER ERROR:", err);
-//       alert("Something went wrong ❌");
-//       return false;
-//     }
-//   };
-
-//   /* ================= UI ================= */
-//   return (
-//     <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-//       {/* LEFT */}
-//       <div className="md:col-span-2 space-y-6">
-//         <div className="bg-white rounded-xl shadow p-6">
-//           <h2 className="text-xl font-semibold mb-4">
-//             Delivery Address
-//           </h2>
-
-//           <AddressList onSelect={setSelectedAddress} />
-
-//           {selectedAddress && (
-//             <p className="mt-2 text-sm text-gray-600">
-//               Delivering to: {selectedAddress.address}
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="bg-white rounded-xl shadow p-6">
-//           <h2 className="text-xl font-semibold mb-4">
-//             Delivery Slot
-//           </h2>
-
-//           <DeliverySlot onChange={setSelectedSlot} />
-
-//           {selectedSlot && (
-//             <p className="mt-3 text-sm text-gray-600">
-//               Selected: {selectedSlot.date} ({selectedSlot.time})
-//             </p>
-//           )}
-//         </div>
-
-//         <div className="bg-white rounded-xl shadow p-6">
-//           <h2 className="text-xl font-semibold mb-4">
-//             Payment Method
-//           </h2>
-
-//           <label className="flex items-center gap-3 mb-2">
-//             <input
-//               type="radio"
-//               checked={paymentMethod === "COD"}
-//               onChange={() => setPaymentMethod("COD")}
-//             />
-//             Cash on Delivery
-//           </label>
-
-//           <label className="flex items-center gap-3">
-//             <input
-//               type="radio"
-//               checked={paymentMethod === "ONLINE"}
-//               onChange={() => setPaymentMethod("ONLINE")}
-//             />
-//             Pay Online
-//           </label>
-//         </div>
-//       </div>
-
-//       {/* RIGHT */}
-//       <div className="bg-white rounded-xl shadow p-6 h-fit">
-//         <h2 className="text-xl font-semibold mb-4">
-//           Order Summary
-//         </h2>
-
-//         {items.map((item) => (
-//           <div
-//             key={`${item.productId}-${item.variantId}`}
-//             className="flex justify-between text-sm mb-2"
-//           >
-//             <span>
-//               {item.name} × {item.qty}
-//             </span>
-//             <span>₹{item.price * item.qty}</span>
-//           </div>
-//         ))}
-
-//         <hr className="my-4" />
-
-//         <div className="flex justify-between font-semibold text-lg">
-//           <span>Total</span>
-//           <span>₹{subtotal}</span>
-//         </div>
-
-//          <button
-//           onClick={placeOrder}
-//           disabled={processing}
-//           className="w-full mt-6 bg-red-600 hover:bg-red-700
-//                      text-white py-3 rounded-xl text-lg font-semibold
-//                      disabled:opacity-60"
-//         >
-//           Proceed to Payment
-//         </button> 
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearCart } from "../features/cart/cartSlice";
 import { useNavigate } from "react-router-dom";
@@ -206,33 +7,62 @@ import AddressList from "../components/AddressList";
 import DeliverySlot from "../components/DeliverySlot";
 
 export default function Checkout() {
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  /* ================= REDUX ================= */
-  const items = useSelector((s) => s.cart.items);
+  /* ================= REDUX CART ================= */
+  const cartItems = useSelector((s) => s.cart.items);
   const token = localStorage.getItem("token");
+
+  /* ================= REORDER DATA ================= */
+  const reorderData = JSON.parse(
+    localStorage.getItem("checkout_data")
+  );
+
+  // 🔥 SOURCE OF TRUTH (reorder > cart)
+  const items =
+    reorderData?.items?.length > 0
+      ? reorderData.items
+      : cartItems;
 
   /* ================= LOCAL STATE ================= */
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [processing, setProcessing] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(
+    reorderData?.deliverySlot || null
+  );
+  const [selectedAddress, setSelectedAddress] = useState(
+    reorderData?.address || null
+  );
+
+  // /* ================= BLOCK INVALID ACCESS ================= */
+  // useEffect(() => {
+  //   if (!items || items.length === 0) {
+  //     navigate("/");
+  //   }
+  // }, [items, navigate]);
 
   /* ================= TOTAL ================= */
   const subtotal = items.reduce(
-    (sum, item) => sum + Number(item.price || 0) * item.qty,
+    (sum, item) =>
+      sum +
+      Number(item.price || 0) *
+        (item.qty || item.quantity || 1),
     0
   );
 
-  /* ================= COD ORDER ================= */
+  /* ================= PLACE COD ORDER ================= */
   const placeCODOrder = async () => {
+    const finalAddress =
+      selectedAddress || reorderData?.address;
+
     if (!items.length) {
       alert("Cart is empty");
       return;
     }
 
-    if (!selectedAddress) {
+    if (!finalAddress) {
       alert("Please select a delivery address");
       return;
     }
@@ -242,32 +72,48 @@ export default function Checkout() {
       return;
     }
 
+    setProcessing(true);
+
     try {
-      setProcessing(true);
+      const fullAddress = {
+        name: finalAddress.label || "Home",
+        address_line1: finalAddress.address_line1 || "",
+        city: finalAddress.city || "",
+        state: finalAddress.state || "",
+        pincode: finalAddress.pincode || "",
+        phone: finalAddress.phone || "",
+      };
 
-      const res = await fetch("http://localhost:4000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          items,
-          totalAmount: subtotal,
-          address_id: selectedAddress.id,
-          address_text: selectedAddress.address_line1,
-          delivery_date: selectedSlot.date,
-          delivery_slot: selectedSlot.time,
-          paymentMethod: "COD",
-        }),
-      });
+      const payload = {
+        items,
+        totalAmount: subtotal,
+        paymentMethod: "COD",
+        address: fullAddress,
+        deliverySlot: selectedSlot,
+      };
 
-      if (!res.ok) {
-        alert("Order failed ❌");
-        return;
-      }
+      const res = await fetch(
+        "http://localhost:4000/api/orders/order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await res.json();
+console.log("SERVER RESPONSE:", data);
+
+if (!res.ok) {
+  alert(data.message || "Order failed ❌");
+  return;
+}
 
       dispatch(clearCart());
+      localStorage.removeItem("checkout_data");
       navigate("/order-success");
     } catch (err) {
       console.error(err);
@@ -279,28 +125,20 @@ export default function Checkout() {
 
   /* ================= ONLINE PAYMENT ================= */
   const goToPayment = () => {
-    if (!items.length) {
-      alert("Cart is empty");
+    const finalAddress =
+      selectedAddress || reorderData?.address;
+
+    if (!items.length || !finalAddress || !selectedSlot) {
+      alert("Please complete checkout details");
       return;
     }
 
-    if (!selectedAddress) {
-      alert("Please select a delivery address");
-      return;
-    }
-
-    if (!selectedSlot) {
-      alert("Please select a delivery slot");
-      return;
-    }
-
-    // ✅ Save data for payment page
     localStorage.setItem(
       "checkout_data",
       JSON.stringify({
         items,
         totalAmount: subtotal,
-        address: selectedAddress,
+        address: finalAddress,
         deliverySlot: selectedSlot,
       })
     );
@@ -312,8 +150,8 @@ export default function Checkout() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* LEFT */}
         <div className="space-y-6">
+
           {/* ADDRESS */}
           <div className="bg-white rounded-xl shadow p-6">
             <h2 className="text-xl font-semibold mb-4">
@@ -344,7 +182,7 @@ export default function Checkout() {
             )}
           </div>
 
-          {/* PAYMENT METHOD */}
+          {/* PAYMENT */}
           <div className="bg-white rounded-xl shadow p-6">
             <h2 className="text-xl font-semibold mb-4">
               Payment Method
@@ -368,7 +206,6 @@ export default function Checkout() {
               Pay Online
             </label>
 
-            {/* ACTION BUTTON */}
             <div className="mt-6">
               {paymentMethod === "COD" && (
                 <button
@@ -393,6 +230,7 @@ export default function Checkout() {
               )}
             </div>
           </div>
+
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// src/components/AdStrip.jsx
+
 import React from "react";
 import { FaTruck, FaTags, FaFire } from "react-icons/fa";
 import "./AdStrip.css";

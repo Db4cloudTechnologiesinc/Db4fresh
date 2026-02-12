@@ -27,15 +27,23 @@ export default function ProductCard({ p }) {
 
   const img = getImageUrl(p);
 
+  /* ✅ ALWAYS USE BACKEND TOTAL STOCK */
+  const stock = Number(p.stock || 0);
+
+  /* Variant (only for passing variantId if exists) */
   const defaultVariant =
     Array.isArray(p.variants) && p.variants.length > 0
       ? p.variants[0]
       : null;
 
-  const price = defaultVariant?.price || p.price || 0;
-  const mrp = defaultVariant?.mrp || p.mrp;
-  const stock = defaultVariant?.stock ?? Number(p.stock) ?? 0;
-  const variantLabel = defaultVariant?.variant_label || "";
+  const price =
+    defaultVariant?.price ?? Number(p.price ?? 0);
+
+  const mrp =
+    defaultVariant?.mrp ?? p.mrp ?? null;
+
+  const variantLabel =
+    defaultVariant?.variant_label || "";
 
   const isWishlisted = wishlist.some(
     (i) => i.productId === p.id
@@ -62,11 +70,11 @@ export default function ProductCard({ p }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
-
+      
       {/* IMAGE SECTION */}
       <Link to={`/product/${p.id}`}>
         <div className="relative w-full h-[200px] bg-white overflow-hidden">
-
+          
           {/* Wishlist */}
           <button
             onClick={handleWishlist}
@@ -97,6 +105,7 @@ export default function ProductCard({ p }) {
             <span className="bg-green-700 text-white text-sm font-bold px-4 py-[2px] rounded-md">
               ₹{price}
             </span>
+
             {mrp && mrp > price && (
               <span className="text-xs text-gray-400 line-through">
                 ₹{mrp}
@@ -149,4 +158,3 @@ export default function ProductCard({ p }) {
     </div>
   );
 }
-

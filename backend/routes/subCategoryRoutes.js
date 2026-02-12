@@ -1,26 +1,4 @@
-// import express from "express";
-// import db from "../config/db.js";
 
-// const router = express.Router();
-
-// /* ==============================
-//    GET SUBCATEGORIES BY CATEGORY (ADMIN FORM)
-// ============================== */
-// router.get("/:categoryId", async (req, res) => {
-//   try {
-//     const [rows] = await db.query(
-//       "SELECT id, name FROM subcategories WHERE category_id = ? ORDER BY name",
-//       [req.params.categoryId]
-//     );
-
-//     res.json(rows);
-//   } catch (err) {
-//     console.error("GET SUBCATEGORIES ERROR:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-// export default router;
 import express from "express";
 import db from "../config/db.js";
 import upload from "../middleware/upload.js";

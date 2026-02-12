@@ -1,34 +1,4 @@
-// import express from "express";
-// import db from "../config/db.js";
 
-// const router = express.Router();
-
-// router.get("/with-subcategories", async (req, res) => {
-//   try {
-//     const [categories] = await db.query(
-//       "SELECT id, name FROM categories"
-//     );
-
-//     const [subs] = await db.query(
-//       "SELECT id, name, image, category_id FROM subcategories"
-//     );
-
-//     const data = categories.map(cat => ({
-//       id: cat.id,
-//       name: cat.name,
-//       subcategories: subs.filter(
-//         sub => Number(sub.category_id) === Number(cat.id)
-//       )
-//     }));
-
-//     res.json(data); // ✅ ALWAYS ARRAY
-//   } catch (err) {
-//     console.error("CATEGORY API ERROR:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
-// export default router;
 
 import express from "express";
 import db from "../config/db.js";

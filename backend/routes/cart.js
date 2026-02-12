@@ -1,3 +1,4 @@
+
 import express from "express";
 import {
   addToCart,
@@ -6,15 +7,33 @@ import {
   removeFromCart,
   getCartCount
 } from "../controllers/cartController.js";
-
 import { requireAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/add", requireAuth, addToCart);
-router.get("/", requireAuth, getCart);
-router.put("/:cartId", requireAuth, updateCartQty);
-router.delete("/:cartId", requireAuth, removeFromCart);
+/**
+ * CART COUNT (HEADER ICON)
+ */
 router.get("/count", requireAuth, getCartCount);
+
+/**
+ * GET FULL CART (USED ON PAGE LOAD / REFRESH)
+ */
+router.get("/", requireAuth, getCart);
+
+/**
+ * ADD TO CART
+ */
+router.post("/add", requireAuth, addToCart);
+
+/**
+ * UPDATE QTY
+ */
+router.put("/:cartId", requireAuth, updateCartQty);
+
+/**
+ * REMOVE ITEM
+ */
+router.delete("/:cartId", requireAuth, removeFromCart);
 
 export default router;

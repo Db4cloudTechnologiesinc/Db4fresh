@@ -11,6 +11,7 @@ export default function AddProduct() {
   ============================== */
   const [form, setForm] = useState({
     name: "",
+    
     category_id: "",
     subcategory_id: "",
     brand: "",

@@ -1,0 +1,99 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #f5f6fa;
+}
+
+.delivery-login {
+  width: 350px;
+  margin: 120px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.delivery-login input {
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.delivery-login button {
+  width: 100%;
+  padding: 12px;
+  background: #2e86de;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.delivery-dashboard {
+  padding: 40px;
+}
+
+.dashboard-cards {
+  display: flex;
+  gap: 20px;
+}
+
+.card {
+  flex: 1;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.logout {
+  background: #ff4757;
+  color: white;
+}
+
+.orders-container {
+  padding: 30px;
+}
+
+.order-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.order-details {
+  padding: 40px;
+}
+
+.status-buttons button {
+  margin-right: 15px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.status-buttons button:nth-child(1) {
+  background: #ffa502;
+}
+
+.status-buttons button:nth-child(2) {
+  background: #1e90ff;
+  color: white;
+}
+
+.status-buttons button:nth-child(3) {
+  background: #2ed573;
+  color: white;
+}

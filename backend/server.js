@@ -24,6 +24,13 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import subCategoryRoutes from "./routes/subCategoryRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import deliveryRoutes from "./routes/deliveryRoutes.js";
+
+import dashboardRoutes from "./routes/delivery/dashboard.js";
+import slotsRoutes from "./routes/delivery/slots.js";
+import referralRoutes from "./routes/delivery/referral.js";
+import earningsRoutes from "./routes/delivery/earnings.js";
+import statusRoutes from "./routes/delivery/status.js";
 
 // MIDDLEWARE
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -70,6 +77,13 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/delivery", deliveryRoutes);
+
+app.use("/api/delivery/dashboard", dashboardRoutes);
+app.use("/api/delivery/slots", slotsRoutes);
+app.use("/api/delivery/referral", referralRoutes);
+app.use("/api/delivery/earnings", earningsRoutes);
+app.use("/api/delivery/status", statusRoutes);
 
 /* ================= HEALTH ================= */
 app.get("/", (req, res) => {

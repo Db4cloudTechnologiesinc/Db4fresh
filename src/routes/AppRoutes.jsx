@@ -155,6 +155,7 @@ import DeliveryDashboard from "../db4fresh_delivery/pages/DeliveryDashboard";
 import OrdersList from "../db4fresh_delivery/pages/OrdersList";
 import DeliveryOrderDetails from "../db4fresh_delivery/pages/OrderDetails";
 import DeliveryRegister from "../db4fresh_delivery/pages/DeliveryRegister";
+import DeliveryHistory from "../db4fresh_delivery/pages/DeliveryHistory";  // ✅ add this import
 
 
 export default function AppRoutes() {
@@ -215,6 +216,7 @@ export default function AppRoutes() {
 <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
 <Route path="/delivery/orders" element={<OrdersList />} />
 <Route path="/delivery/order/:id" element={<DeliveryOrderDetails />} />
+<Route path="/delivery/history" element={<DeliveryHistory />} />
 
       {/* ================= REORDER SUPPORT ================= */}
       <Route path="/reorder/:id" element={<Checkout />} />

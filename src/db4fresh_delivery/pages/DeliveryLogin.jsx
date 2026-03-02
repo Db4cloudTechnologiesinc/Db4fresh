@@ -10,7 +10,7 @@ export default function DeliveryLogin() {
   const handleLogin = async () => {
     try {
       const res = await loginDelivery({ email, password });
-      localStorage.setItem("delivery_token", res.data.token);
+      localStorage.setItem("deliveryToken", res.data.token);
       navigate("/delivery/dashboard");
     } catch (err) {
       alert(err.response?.data?.message || "Invalid Credentials");

@@ -1,471 +1,3 @@
-// import db from "../config/db.js";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-// import Tesseract from "tesseract.js";
-// import path from "path";
-// import fs from "fs";
-
-// /* ================= REGISTER WITH OCR ================= */
-// export const registerDelivery = async (req, res) => {
-//   try {
-//     const {
-//       name,
-//       email,
-//       password,
-//       phone,
-//       dob,
-//       vehicle_type,
-//       license_number,
-//       license_expiry,
-//       verification_score,
-//     } = req.body;
-
-//     const licenseImage = req.file?.filename;
-
-//     if (!licenseImage) {
-//       return res.status(400).json({
-//         message: "License image required",
-//       });
-//     }
-
-//     /* ================= CHECK EMAIL ================= */
-//     const [existing] = await db.query(
-//       "SELECT id FROM delivery_partners WHERE email = ?",
-//       [email]
-//     );
-
-//     if (existing.length > 0) {
-//       return res.status(400).json({
-//         message: "Email already exists",
-//       });
-//     }
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     /* ================= SAFE FILE PATH ================= */
-//     const imagePath = path.join(
-//       process.cwd(),
-//       "uploads",
-//       "delivery",
-//       licenseImage
-//     );
-
-//     console.log("Reading image from:", imagePath);
-
-//     if (!fs.existsSync(imagePath)) {
-//       return res.status(400).json({
-//         message: "Uploaded file not found on server",
-//       });
-//     }
-
-//     /* ================= OCR PROCESS ================= */
-//     const result = await Tesseract.recognize(
-//       imagePath,
-//       "eng"
-//     );
-
-//     const extractedText = result.data.text.toUpperCase();
-
-//     console.log("OCR TEXT:", extractedText);
-
-//     /* ================= VALIDATION ================= */
-// let status = "REJECTED";
-
-// /* ================= KEYWORD CHECK ================= */
-// const containsLicenseKeyword =
-//   extractedText.includes("DRIVING") ||
-//   extractedText.includes("LICENCE") ||
-//   extractedText.includes("LICENSE");
-
-// /* ================= LICENSE FORMAT CHECK ================= */
-// // Accept modern Indian DL formats (10–20 alphanumeric characters)
-// const licenseRegex = /^[A-Z0-9]{10,20}$/;
-
-// const cleanedLicenseNumber =
-//   license_number?.replace(/\s/g, "").toUpperCase();
-
-// const validLicenseFormat =
-//   licenseRegex.test(cleanedLicenseNumber);
-
-// /* ================= EXPIRY CHECK ================= */
-// const notExpired =
-//   new Date(license_expiry) > new Date();
-
-// /* ================= DRIVING TEST CHECK ================= */
-// const passedTest =
-//   parseInt(verification_score) >= 2;
-
-// /* ================= DEBUG LOGS ================= */
-// console.log("containsLicenseKeyword:", containsLicenseKeyword);
-// console.log("validLicenseFormat:", validLicenseFormat);
-// console.log("notExpired:", notExpired);
-// console.log("passedTest:", passedTest);
-
-// /* ================= FINAL DECISION ================= */
-// if (
-//   containsLicenseKeyword &&
-//   validLicenseFormat &&
-//   notExpired &&
-//   passedTest
-// ) {
-//   status = "APPROVED";
-// }
-
-
-//     /* ================= INSERT INTO DB ================= */
-
-//     await db.query(
-//       `INSERT INTO delivery_partners 
-//        (name, email, password, phone, dob, vehicle_type,
-//         license_number, license_expiry, license_image,
-//         verification_score, status)
-//        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//       [
-//         name,
-//         email,
-//         hashedPassword,
-//         phone,
-//         dob,
-//         vehicle_type,
-//         license_number,
-//         license_expiry,
-//         licenseImage,
-//         verification_score || 0,
-//         status,
-//       ]
-//     );
-
-//     if (status === "APPROVED") {
-//       return res.status(201).json({
-//         message: "Verification successful. You can login.",
-//       });
-//     } else {
-//       return res.status(400).json({
-//         message:
-//           "License verification failed. Please upload valid driving license.",
-//       });
-//     }
-
-//   } catch (err) {
-//     console.error("OCR REGISTER ERROR:", err);
-//     res.status(500).json({
-//       message: "Server error",
-//     });
-//   }
-// };
-
-// /* ================= LOGIN ================= */
-// export const loginDelivery = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     const [users] = await db.query(
-//       "SELECT * FROM delivery_partners WHERE email = ?",
-//       [email]
-//     );
-
-//     if (users.length === 0) {
-//       return res.status(400).json({
-//         message: "Invalid credentials",
-//       });
-//     }
-
-//     const user = users[0];
-
-//     const isMatch = await bcrypt.compare(
-//       password,
-//       user.password
-//     );
-
-//     if (!isMatch) {
-//       return res.status(400).json({
-//         message: "Invalid credentials",
-//       });
-//     }
-
-//     if (user.status !== "APPROVED") {
-//       return res.status(403).json({
-//         message:
-//           "Account not verified. License validation failed.",
-//       });
-//     }
-
-//     const token = jwt.sign(
-//       { id: user.id },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "7d" }
-//     );
-
-//     res.json({
-//       token,
-//       user: {
-//         id: user.id,
-//         name: user.name,
-//         email: user.email,
-//         status: user.status,
-//       },
-//     });
-
-//   } catch (err) {
-//     console.error("LOGIN ERROR:", err);
-//     res.status(500).json({
-//       message: "Server error",
-//     });
-//   }
-// };
-// export const getDeliveryHistory = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-//     const { from, to } = req.query;
-
-//     let query = `
-//       SELECT id, total_amount, delivery_fee, delivered_at
-//       FROM orders
-//       WHERE delivery_partner_id = ?
-//       AND status = 'Delivered'
-//     `;
-
-//     let params = [deliveryId];
-
-//     if (from && to) {
-//       query += " AND DATE(delivered_at) BETWEEN ? AND ?";
-//       params.push(from, to);
-//     }
-
-//     query += " ORDER BY delivered_at DESC";
-
-//     const [orders] = await db.query(query, params);
-
-//     const totalEarnings = orders.reduce(
-//       (sum, order) => sum + order.delivery_fee,
-//       0
-//     );
-
-//     res.json({
-//       success: true,
-//       totalOrders: orders.length,
-//       totalEarnings,
-//       orders,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-// export const updateDeliveryProfile = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-//     const { name, phone } = req.body;
-
-//     let profileImage = null;
-
-//     if (req.file) {
-//       profileImage = req.file.filename;
-//     }
-
-//     const query = `
-//       UPDATE delivery_partners
-//       SET name = ?, phone = ?, profile_image = COALESCE(?, profile_image)
-//       WHERE id = ?
-//     `;
-
-//     await db.query(query, [name, phone, profileImage, deliveryId]);
-
-//     res.json({
-//       success: true,
-//       message: "Profile updated successfully",
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-// export const getDeliveryProfile = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-
-//     const [rows] = await db.query(
-//       "SELECT name, phone, profile_image FROM delivery_partners WHERE id = ?",
-//       [deliveryId]
-//     );
-
-//     res.json(rows[0]);
-
-//   } catch (error) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-
-// export const getStoreDetails = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-
-//     const [rows] = await db.query(
-//       "SELECT * FROM delivery_store WHERE delivery_id = ?",
-//       [deliveryId]
-//     );
-
-//     res.json(rows[0] || {});
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-
-// export const updateStoreDetails = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-//     const {
-//       store_name,
-//       address,
-//       city,
-//       pincode,
-//       phone,
-//       latitude,
-//       longitude,
-//       is_active
-//     } = req.body;
-
-//     const [existing] = await db.query(
-//       "SELECT id FROM delivery_store WHERE delivery_id = ?",
-//       [deliveryId]
-//     );
-
-//     if (existing.length > 0) {
-//       await db.query(
-//         `UPDATE delivery_store 
-//          SET store_name=?, address=?, city=?, pincode=?, phone=?, latitude=?, longitude=?, is_active=? 
-//          WHERE delivery_id=?`,
-//         [
-//           store_name,
-//           address,
-//           city,
-//           pincode,
-//           phone,
-//           latitude,
-//           longitude,
-//           is_active,
-//           deliveryId
-//         ]
-//       );
-//     } else {
-//       await db.query(
-//         `INSERT INTO delivery_store 
-//          (delivery_id, store_name, address, city, pincode, phone, latitude, longitude, is_active)
-//          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-//         [
-//           deliveryId,
-//           store_name,
-//           address,
-//           city,
-//           pincode,
-//           phone,
-//           latitude,
-//           longitude,
-//           is_active
-//         ]
-//       );
-//     }
-
-//     res.json({ success: true });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-
-// export const createSupportTicket = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-//     const { issue_type, description } = req.body;
-
-//     let screenshot = null;
-//     if (req.file) {
-//       screenshot = req.file.filename;
-//     }
-
-//     await db.query(
-//       `INSERT INTO delivery_support_tickets 
-//        (delivery_id, issue_type, description, screenshot) 
-//        VALUES (?, ?, ?, ?)`,
-//       [deliveryId, issue_type, description, screenshot]
-//     );
-
-//     res.json({ success: true, message: "Ticket created successfully" });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-
-// export const getSupportTickets = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-
-//     const [rows] = await db.query(
-//       `SELECT * FROM delivery_support_tickets 
-//        WHERE delivery_id = ? 
-//        ORDER BY created_at DESC`,
-//       [deliveryId]
-//     );
-
-//     res.json(rows);
-//   } catch (error) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-// export const uploadDocument = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-//     const { document_type } = req.body;
-
-//     if (!req.file) {
-//       return res.status(400).json({ message: "File required" });
-//     }
-
-//     const fileName = req.file.filename;
-
-//     // Check if document already exists
-//     const [existing] = await db.query(
-//       "SELECT id FROM delivery_documents WHERE delivery_id=? AND document_type=?",
-//       [deliveryId, document_type]
-//     );
-
-//     if (existing.length > 0) {
-//       await db.query(
-//         "UPDATE delivery_documents SET file_name=?, status='Pending' WHERE delivery_id=? AND document_type=?",
-//         [fileName, deliveryId, document_type]
-//       );
-//     } else {
-//       await db.query(
-//         "INSERT INTO delivery_documents (delivery_id, document_type, file_name) VALUES (?, ?, ?)",
-//         [deliveryId, document_type, fileName]
-//       );
-//     }
-
-//     res.json({ success: true });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
-// export const getDocuments = async (req, res) => {
-//   try {
-//     const deliveryId = req.user.id;
-
-//     const [rows] = await db.query(
-//       "SELECT * FROM delivery_documents WHERE delivery_id=?",
-//       [deliveryId]
-//     );
-
-//     res.json(rows);
-
-//   } catch (error) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// };
 
 import db from "../config/db.js";
 import bcrypt from "bcryptjs";
@@ -517,7 +49,7 @@ export const registerDelivery = async (req, res) => {
     const result = await Tesseract.recognize(imagePath, "eng");
     const extractedText = result.data.text.toUpperCase();
 
-    let status = "REJECTED";
+    let status = "rejected";
 
     const containsLicenseKeyword =
       extractedText.includes("DRIVING") ||
@@ -543,7 +75,7 @@ export const registerDelivery = async (req, res) => {
       notExpired &&
       passedTest
     ) {
-      status = "APPROVED";
+      status = "approved";
     }
 
     await db.query(
@@ -567,7 +99,7 @@ export const registerDelivery = async (req, res) => {
       ]
     );
 
-    if (status === "APPROVED") {
+    if (status === "approved") {
       return res.status(201).json({
         message: "Verification successful. You can login.",
       });
@@ -603,7 +135,7 @@ export const loginDelivery = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    if (user.status !== "APPROVED")
+    if (user.status !== "approved")
       return res.status(403).json({ message: "Account not verified." });
 
     const token = jwt.sign(
@@ -679,17 +211,26 @@ export const getDeliveryProfile = async (req, res) => {
     const deliveryId = req.user.id;
 
     const [rows] = await db.query(
-      "SELECT name, phone, profile_image FROM delivery_partners WHERE id=?",
+      `SELECT 
+         name, 
+         phone_number AS phone, 
+         profile_image 
+       FROM delivery_partners 
+       WHERE id=?`,
       [deliveryId]
     );
 
+    if (!rows.length) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
     res.json(rows[0]);
 
-  } catch {
+  } catch (error) {
+    console.error("Profile API Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 /* ================= STORE DETAILS ================= */
 export const getStoreDetails = async (req, res) => {
   try {
@@ -952,5 +493,54 @@ export const getCODTransactions = async (req, res) => {
 
   } catch {
     res.status(500).json({ message: "Server Error" });
+  }
+};
+export const getDeliveryEarnings = async (req, res) => {
+  try {
+    const deliveryId = req.user.id;
+
+    const [orders] = await db.query(
+      `SELECT total_amount, payment_method, created_at 
+       FROM orders 
+       WHERE delivery_partner_id = ? 
+       AND order_status = 'DELIVERED'`,
+      [deliveryId]
+    );
+
+    let totalEarnings = 0;
+    let todayEarnings = 0;
+    let codAmount = 0;
+    let onlineAmount = 0;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    orders.forEach(order => {
+      // Example: give 10% commission per order
+      const deliveryFee = order.total_amount * 0.1;
+
+      totalEarnings += deliveryFee;
+
+      if (order.created_at?.toISOString?.().split("T")[0] === today) {
+        todayEarnings += deliveryFee;
+      }
+
+      if (order.payment_method === "COD") {
+        codAmount += order.total_amount;
+      } else {
+        onlineAmount += order.total_amount;
+      }
+    });
+
+    res.json({
+      totalEarnings,
+      todayEarnings,
+      totalOrders: orders.length,
+      codAmount,
+      onlineAmount
+    });
+
+  } catch (error) {
+    console.error("Earnings API Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

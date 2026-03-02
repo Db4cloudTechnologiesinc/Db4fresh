@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -5,15 +6,29 @@ export default function DeliveryAssignedOrders() {
   const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
-    const { data } = await axios.get(
-      "/api/delivery/assigned-orders",
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
-        },
+    try {
+      const { data } = await axios.get(
+        "/api/delivery/assigned-orders",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
+          },
+        }
+      );
+
+      // ✅ Handle both possible backend responses
+      if (Array.isArray(data)) {
+        setOrders(data);
+      } else if (Array.isArray(data.orders)) {
+        setOrders(data.orders);
+      } else {
+        setOrders([]);
       }
-    );
-    setOrders(data.orders);
+
+    } catch (error) {
+      console.error("Fetch orders error:", error);
+      setOrders([]); // prevent crash
+    }
   };
 
   useEffect(() => {
@@ -21,33 +36,41 @@ export default function DeliveryAssignedOrders() {
   }, []);
 
   const collectCOD = async (orderId) => {
-    await axios.post(
-      "/api/delivery/collect-cod",
-      { order_id: orderId },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
-        },
-      }
-    );
+    try {
+      await axios.post(
+        "/api/delivery/collect-cod",
+        { order_id: orderId },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
+          },
+        }
+      );
 
-    alert("COD Collected Successfully");
-    fetchOrders();
+      alert("COD Collected Successfully");
+      fetchOrders();
+    } catch (error) {
+      console.error("COD collection error:", error);
+    }
   };
 
   const markDelivered = async (orderId) => {
-    await axios.put(
-      `/api/orders/${orderId}/deliver`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
-        },
-      }
-    );
+    try {
+      await axios.put(
+        `/api/orders/${orderId}/deliver`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("deliveryToken")}`,
+          },
+        }
+      );
 
-    alert("Order Delivered");
-    fetchOrders();
+      alert("Order Delivered");
+      fetchOrders();
+    } catch (error) {
+      console.error("Mark delivered error:", error);
+    }
   };
 
   return (
@@ -56,59 +79,63 @@ export default function DeliveryAssignedOrders() {
         Assigned Orders
       </h1>
 
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="bg-white shadow-lg rounded-xl p-5 mb-4"
-        >
-          <div className="flex justify-between items-center">
-            <h2 className="font-semibold">
-              Order #{order.id}
-            </h2>
+      {orders.length === 0 ? (
+        <p className="text-gray-500">No Assigned Orders</p>
+      ) : (
+        orders.map((order) => (
+          <div
+            key={order.id}
+            className="bg-white shadow-lg rounded-xl p-5 mb-4"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold">
+                Order #{order.id}
+              </h2>
 
-            {order.payment_method === "COD" ? (
-              <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
-                COD
-              </span>
-            ) : (
-              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                ONLINE
-              </span>
-            )}
-          </div>
+              {order.payment_method === "COD" ? (
+                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                  COD
+                </span>
+              ) : (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                  ONLINE
+                </span>
+              )}
+            </div>
 
-          <p className="mt-2 text-gray-600">
-            Amount: ₹{order.total_amount}
-          </p>
+            <p className="mt-2 text-gray-600">
+              Amount: ₹{order.total_amount}
+            </p>
 
-          <p className="text-gray-600">
-            Payment Status: {order.payment_status}
-          </p>
+            <p className="text-gray-600">
+              Payment Status: {order.payment_status}
+            </p>
 
-          <div className="mt-4 flex gap-3">
+            <div className="mt-4 flex gap-3">
 
-            {order.payment_method === "COD" &&
-              order.payment_status === "pending" && (
+              {order.payment_method === "COD" &&
+                order.payment_status === "pending" && (
+                  <button
+                    onClick={() => collectCOD(order.id)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Collect COD
+                  </button>
+                )}
+
+              {(order.payment_method === "ONLINE" ||
+                order.payment_status === "paid") && (
                 <button
-                  onClick={() => collectCOD(order.id)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                  onClick={() => markDelivered(order.id)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg"
                 >
-                  Collect COD
+                  Mark Delivered
                 </button>
               )}
-
-            {(order.payment_method === "ONLINE" ||
-              order.payment_status === "paid") && (
-              <button
-                onClick={() => markDelivered(order.id)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg"
-              >
-                Mark Delivered
-              </button>
-            )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }

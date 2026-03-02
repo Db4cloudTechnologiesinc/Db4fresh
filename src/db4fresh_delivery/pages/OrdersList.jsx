@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
-  const token = localStorage.getItem("delivery_token");
+  const token = localStorage.getItem("deliveryToken");
 
   useEffect(() => {
     getAssignedOrders(token)

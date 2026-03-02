@@ -20,17 +20,34 @@ export default function Documents() {
 
   const fetchDocuments = async () => {
     try {
+      const token =
+        localStorage.getItem("deliveryToken") ||
+        localStorage.getItem("delivery_token");
+
+      if (!token) {
+        alert("Please login again.");
+        return;
+      }
+
       const res = await axios.get(
         "http://localhost:4000/api/delivery/documents",
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      setDocuments(res.data);
+
+      setDocuments(res.data || []);
+
     } catch (error) {
-      console.error(error);
+      console.error("Documents fetch error:", error);
+
+      if (error.response?.status === 401) {
+        alert("Session expired. Please login again.");
+        localStorage.removeItem("deliveryToken");
+        localStorage.removeItem("delivery_token");
+      }
     }
   };
 
@@ -41,6 +58,10 @@ export default function Documents() {
     }
 
     try {
+      const token =
+        localStorage.getItem("deliveryToken") ||
+        localStorage.getItem("delivery_token");
+
       const formData = new FormData();
       formData.append("document_type", selectedType);
       formData.append("document", file);
@@ -50,7 +71,8 @@ export default function Documents() {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -61,6 +83,7 @@ export default function Documents() {
       fetchDocuments();
 
     } catch (error) {
+      console.error("Upload error:", error);
       alert("Upload failed");
     }
   };
@@ -108,13 +131,15 @@ export default function Documents() {
               <p className="font-semibold">{doc.document_type}</p>
               <p className="text-sm">
                 Status:{" "}
-                <span className={
-                  doc.status === "Verified"
-                    ? "text-green-600"
-                    : doc.status === "Rejected"
-                    ? "text-red-600"
-                    : "text-yellow-600"
-                }>
+                <span
+                  className={
+                    doc.status === "Verified"
+                      ? "text-green-600"
+                      : doc.status === "Rejected"
+                      ? "text-red-600"
+                      : "text-yellow-600"
+                  }
+                >
                   {doc.status}
                 </span>
               </p>

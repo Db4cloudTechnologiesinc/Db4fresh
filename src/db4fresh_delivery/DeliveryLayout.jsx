@@ -1,27 +1,20 @@
-// import Sidebar from "./components/Sidebar";
-// import { Outlet } from "react-router-dom";
-
-// export default function DeliveryLayout() {
-//   return (
-//     <div style={{ display: "flex" }}>
-//       <Sidebar />
-
-//       <div style={{ marginLeft: "230px", padding: "30px", width: "100%" }}>
-//         <Outlet />
-//       </div>
-//     </div>
-//   );
-// }
-import Sidebar from "./components/Sidebar";
 import { Outlet } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
 
 export default function DeliveryLayout() {
   return (
-    <div style={{ display: "flex" }}>
+    <div className="bg-slate-100 min-h-screen">
+
+      {/* Sidebar - Fixed */}
       <Sidebar />
-      <div style={{ marginLeft: "230px", padding: "30px", width: "100%" }}>
-        <Outlet />
+
+      {/* Main Content */}
+      <div className="ml-64 min-h-screen p-8">
+        <div className="max-w-7xl mx-auto">
+          <Outlet />
+        </div>
       </div>
+
     </div>
   );
 }

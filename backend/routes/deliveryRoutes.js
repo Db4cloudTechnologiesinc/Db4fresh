@@ -1,99 +1,3 @@
-
-// import express from "express";
-// import upload from "../middleware/upload.js";
-// import deliveryAuthMiddleware from "../middleware/deliveryAuthMiddleware.js"; // ✅ add this
-
-// import {
-//   registerDelivery,
-//   loginDelivery,
-//   getDeliveryHistory,
-//   updateDeliveryProfile,
-//   getDeliveryProfile,
-//   getStoreDetails,        // ✅ ADD THIS
-//   updateStoreDetails,      // ✅ ADD THIS
-//   createSupportTicket,    // ✅ ADD THIS
-//   getSupportTickets,
-//   uploadDocument,
-//   getDocuments
-// } from "../controllers/deliveryController.js";
-
-// const router = express.Router();
-// router.get("/store", deliveryAuthMiddleware, getStoreDetails);
-// /* ===============================
-//    REGISTER DELIVERY PARTNER
-// =============================== */
-// router.post(
-//   "/register",
-//   upload.single("license_image"),
-//   registerDelivery
-// );
-
-// /* ===============================
-//    LOGIN DELIVERY PARTNER
-// =============================== */
-// router.post("/login", loginDelivery);
-
-// /* ===============================
-//    DELIVERY HISTORY (Protected)
-// =============================== */
-// router.get(
-//   "/history",
-//   deliveryAuthMiddleware,   // 🔐 Only logged-in delivery partner
-//   getDeliveryHistory
-// );
-// router.put(
-//   "/update-profile",
-//   deliveryAuthMiddleware,
-//   upload.single("profile_image"),
-//   updateDeliveryProfile
-// );
-
-// router.get(
-//   "/profile",
-//   deliveryAuthMiddleware,
-//   getDeliveryProfile
-// );
-
-// router.get(
-//   "/store",
-//   deliveryAuthMiddleware,
-//   getStoreDetails
-// );
-
-// router.put(
-//   "/store",
-//   deliveryAuthMiddleware,
-//   updateStoreDetails
-// );
-
-// router.post(
-//   "/support",
-//   deliveryAuthMiddleware,
-//   upload.single("screenshot"),
-//   createSupportTicket
-// );
-
-// router.get(
-//   "/support",
-//   deliveryAuthMiddleware,
-//   getSupportTickets
-// );
-// router.post(
-//   "/documents",
-//   deliveryAuthMiddleware,
-//   upload.single("document"),
-//   uploadDocument
-// );
-
-// router.get(
-//   "/documents",
-//   deliveryAuthMiddleware,
-//   getDocuments
-// );
-
-// export default router;
-
-
 import express from "express";
 import upload from "../middleware/upload.js";
 import deliveryAuthMiddleware from "../middleware/deliveryAuthMiddleware.js";
@@ -110,6 +14,7 @@ import {
   getSupportTickets,
   uploadDocument,
   getDocuments,
+  getDeliveryEarnings,
 
   // 🔥 NEW ADVANCED COD CONTROLLERS
   getAssignedOrders,
@@ -190,6 +95,9 @@ router.get(
   deliveryAuthMiddleware,
   getDocuments
 );
+
+
+router.get("/earnings", deliveryAuthMiddleware, getDeliveryEarnings);
 
 /* ===================================================
    🔥 ADVANCED COD SYSTEM ROUTES

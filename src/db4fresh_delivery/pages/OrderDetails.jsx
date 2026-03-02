@@ -3,7 +3,7 @@ import { updateOrderStatus } from "../services/deliveryApi";
 
 export default function OrderDetails() {
   const { id } = useParams();
-  const token = localStorage.getItem("delivery_token");
+  const token = localStorage.getItem("deliveryToken");
 
   const changeStatus = (status) => {
     updateOrderStatus(id, status, token)

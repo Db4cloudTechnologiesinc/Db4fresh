@@ -330,6 +330,39 @@ export const getSupportTickets = async (req, res) => {
 };
 
 /* ================= DOCUMENTS ================= */
+// export const uploadDocument = async (req, res) => {
+//   try {
+//     const deliveryId = req.user.id;
+//     const { document_type } = req.body;
+
+//     if (!req.file)
+//       return res.status(400).json({ message: "File required" });
+
+//     const fileName = req.file.filename;
+
+//     const [existing] = await db.query(
+//       "SELECT id FROM delivery_documents WHERE delivery_id=? AND document_type=?",
+//       [deliveryId, document_type]
+//     );
+
+//     if (existing.length) {
+//       await db.query(
+//         "UPDATE delivery_documents SET file_name=?, status='Pending' WHERE delivery_id=? AND document_type=?",
+//         [fileName, deliveryId, document_type]
+//       );
+//     } else {
+//       await db.query(
+//         "INSERT INTO delivery_documents (delivery_id, document_type, file_name) VALUES (?, ?, ?)",
+//         [deliveryId, document_type, fileName]
+//       );
+//     }
+
+//     res.json({ success: true });
+
+//   } catch {
+//     res.status(500).json({ message: "Server Error" });
+//   }
+// };
 export const uploadDocument = async (req, res) => {
   try {
     const deliveryId = req.user.id;
@@ -338,7 +371,8 @@ export const uploadDocument = async (req, res) => {
     if (!req.file)
       return res.status(400).json({ message: "File required" });
 
-    const fileName = req.file.filename;
+    const fileBuffer = req.file.buffer;
+    const fileType = req.file.mimetype;
 
     const [existing] = await db.query(
       "SELECT id FROM delivery_documents WHERE delivery_id=? AND document_type=?",
@@ -347,23 +381,23 @@ export const uploadDocument = async (req, res) => {
 
     if (existing.length) {
       await db.query(
-        "UPDATE delivery_documents SET file_name=?, status='Pending' WHERE delivery_id=? AND document_type=?",
-        [fileName, deliveryId, document_type]
+        "UPDATE delivery_documents SET file_data=?, file_type=?, status='Pending' WHERE delivery_id=? AND document_type=?",
+        [fileBuffer, fileType, deliveryId, document_type]
       );
     } else {
       await db.query(
-        "INSERT INTO delivery_documents (delivery_id, document_type, file_name) VALUES (?, ?, ?)",
-        [deliveryId, document_type, fileName]
+        "INSERT INTO delivery_documents (delivery_id, document_type, file_data, file_type) VALUES (?, ?, ?, ?)",
+        [deliveryId, document_type, fileBuffer, fileType]
       );
     }
 
     res.json({ success: true });
 
-  } catch {
+  } catch (error) {
+    console.error("Upload error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
-
 export const getDocuments = async (req, res) => {
   try {
     const deliveryId = req.user.id;
@@ -542,5 +576,35 @@ export const getDeliveryEarnings = async (req, res) => {
   } catch (error) {
     console.error("Earnings API Error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getDocumentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      "SELECT file_data, file_type FROM delivery_documents WHERE id = ?",
+      [id]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found"
+      });
+    }
+
+    const document = rows[0];
+
+    res.setHeader("Content-Type", document.file_type);
+    res.send(document.file_data);
+
+  } catch (error) {
+    console.error("Document fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };

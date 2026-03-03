@@ -228,5 +228,9 @@ router.put("/:id", requireAuth, async (req, res) => {
     return res.status(500).json({ message: "Address update failed" });
   }
 });
+router.get("/", getAddresses);
+router.post("/", requireAuth, addAddress);
+router.put("/:id/default", setDefaultAddress);
+router.delete("/:id", deleteAddress);
 
 export default router;

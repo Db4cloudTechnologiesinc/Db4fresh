@@ -38,8 +38,30 @@ router.get("/subcategory/:subcategoryId", getProductsBySubcategory);
 router.get("/", getProducts);
 router.post("/", createProductWithVariants);
 
+<<<<<<< HEAD
 /* ================= PRODUCT EXTRA ROUTES ================= */
 /* ⚠️ SPECIFIC ROUTES MUST COME BEFORE GENERIC :id */
+=======
+/* ================= EXTRA ================= */
+router.get("/search", searchProducts);
+
+/* ⚠️ DYNAMIC ROUTES MUST BE LAST */
+/* ================= MAIN ROUTES ================= */
+// Upload multiple images (Add Product)
+router.post("/upload", upload.array("images", 10), uploadImages);
+
+// Products
+router.get("/", getProducts);
+router.post("/", createProductWithVariants);
+
+/* ⚠️ Dynamic routes MUST come last */
+// 🔥 FIXED: Update with multiple images
+router.put("/:id", upload.array("images", 10), updateProduct);
+
+router.delete("/:id", deleteProduct);
+
+// Extra routes
+>>>>>>> 1b1f779f33a8e28559a72481ec8b515e00342974
 router.get("/:id/details", getProductDetails);
 router.get("/:id/reviews", getProductReviews);
 router.get("/:id/similar", getSimilarProducts);

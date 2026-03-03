@@ -6,8 +6,8 @@ const router = express.Router();
 /* =====================================================
    GET ALL SLOTS + BOOKED COUNT + ACTIVE SLOT
 ===================================================== */
-router.get("/:partnerId", async (req, res) => {
-  const { partnerId } = req.params;
+router.get("/", async (req, res) => {
+  const  partnerId  = req.user.id;;
 
   try {
     // Get all active slots with today's booking count
@@ -56,7 +56,8 @@ router.get("/:partnerId", async (req, res) => {
    BOOK SLOT (VALIDATION + CAPACITY + TIME CHECK)
 ===================================================== */
 router.post("/book", async (req, res) => {
-  const { partnerId, slotId } = req.body;
+  const { slotId } = req.body;
+  const partnerId = req.user.id;
 
   try {
     // Check already booked

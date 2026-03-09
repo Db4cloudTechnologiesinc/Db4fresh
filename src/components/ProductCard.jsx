@@ -150,7 +150,7 @@ export default function ProductCard({ p }) {
             </span>
           ) : (
             <span className="text-gray-600">
-              Delivery in 30mins
+              {/* Delivery in 30mins */}
             </span>
           )}
         </div>

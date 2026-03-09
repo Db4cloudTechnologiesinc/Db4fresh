@@ -1,4 +1,4 @@
-
+ 
  import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
  
@@ -21,11 +21,6 @@ export default function ProductList() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
  
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
   const token = localStorage.getItem("token");
  
   /* ================= FETCH PRODUCTS ================= */
@@ -36,16 +31,16 @@ export default function ProductList() {
       // setProducts(data);
       // setFiltered(data);
       const data = await res.json();
-
+ 
 const productArray = Array.isArray(data)
   ? data
   : Array.isArray(data.products)
   ? data.products
   : [];
-
+ 
 setProducts(productArray);
 setFiltered(productArray);
-
+ 
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -60,7 +55,6 @@ setFiltered(productArray);
   /* ================= BRAND LIST ================= */
   const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
  
-
   /* ================= FILTER + SORT LOGIC ================= */
   useEffect(() => {
     let data = [...products];
@@ -83,21 +77,18 @@ setFiltered(productArray);
       data = data.filter(p => Number(p.price) <= Number(maxPrice));
     }
  
-
     if (manufactureDate) {
       data = data.filter(
         p => p.manufacture_date && p.manufacture_date >= manufactureDate
       );
     }
  
-
     if (expiryDate) {
       data = data.filter(
         p => p.expiry_date && p.expiry_date <= expiryDate
       );
     }
  
-
     // ⭐ SORT BY RATING
     if (sortByRating === "high") {
       data.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
@@ -107,11 +98,6 @@ setFiltered(productArray);
       data.sort((a, b) => (a.avgRating || 0) - (b.avgRating || 0));
     }
  
-
-    if (sortByRating === "low") {
-      data.sort((a, b) => (a.avgRating || 0) - (b.avgRating || 0));
-    }
-
     setFiltered(data);
     setCurrentPage(1);
   }, [
@@ -125,7 +111,6 @@ setFiltered(productArray);
     products,
   ]);
  
-
   /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -135,16 +120,11 @@ setFiltered(productArray);
   /* ================= HELPERS ================= */
   const today = new Date();
  
-
-  /* ================= HELPERS ================= */
-  const today = new Date();
-
   const isExpired = (date) => {
     if (!date) return false;
     return new Date(date) < today;
   };
  
-
   const isExpiringSoon = (date) => {
     if (!date) return false;
     const diffDays =
@@ -152,7 +132,6 @@ setFiltered(productArray);
     return diffDays > 0 && diffDays <= 7;
   };
  
-
   /* ================= DELETE PRODUCT ================= */
   const deleteProduct = async (id) => {
     if (!window.confirm("Delete this product?")) return;
@@ -166,7 +145,6 @@ setFiltered(productArray);
         }
       );
  
-
       if (res.ok) {
         setProducts(prev => prev.filter(p => p.id !== id));
         alert("Product deleted");
@@ -213,7 +191,6 @@ setFiltered(productArray);
           ))}
         </select>
  
-
         <select
           value={sortByRating}
           onChange={(e) => setSortByRating(e.target.value)}
@@ -224,7 +201,6 @@ setFiltered(productArray);
           <option value="low">⭐ Low → High</option>
         </select>
  
-
         <input
           type="number"
           placeholder="Min Price"
@@ -241,7 +217,6 @@ setFiltered(productArray);
           className="border p-2 rounded"
         />
  
-
         <input
           type="date"
           value={manufactureDate}
@@ -249,7 +224,6 @@ setFiltered(productArray);
           className="border p-2 rounded"
         />
  
-
         <input
           type="date"
           value={expiryDate}
@@ -257,7 +231,6 @@ setFiltered(productArray);
           className="border p-2 rounded"
         />
  
-
         <button
           onClick={() => {
             setSearch("");
@@ -313,7 +286,6 @@ setFiltered(productArray);
                   />
                 </td>
  
-
                 <td className="p-3">{product.brand || "—"}</td>
                 <td className="p-3 font-medium">{product.name}</td>
                 <td className="p-3">{product.category}</td>
@@ -353,34 +325,6 @@ setFiltered(productArray);
                 </td>
  
                 <td className="p-3">
-                  {product.manufacture_date
-                    ? new Date(product.manufacture_date).toLocaleDateString("en-IN")
-                    : "—"}
-                </td>
-
-                <td className="p-3">
-                  {product.expiry_date
-                    ? new Date(product.expiry_date).toLocaleDateString("en-IN")
-                    : "—"}
-                </td>
-
-                {/* ⭐ RATINGS COLUMN */}
-                <td className="p-3">
-                  {product.totalReviews > 0 ? (
-                    <div>
-                      <span className="text-yellow-600 font-semibold">
-                        ⭐ {product.avgRating}
-                      </span>
-                      <div className="text-xs text-gray-500">
-                        ({product.totalReviews})
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-sm">No ratings</span>
-                  )}
-                </td>
-
-                <td className="p-3">
                   <div className="flex gap-4">
                     <Link
                       to={`/admin/products/update/${product.id}`}
@@ -412,3 +356,5 @@ setFiltered(productArray);
     </div>
   );
 }
+ 
+ 

@@ -5,14 +5,13 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import LocationModal from "./LocationModal";
 import SearchSuggestions from "./SearchSuggestions";
-import OfferStrip from "./OfferStrip";
 import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
- 
 
 export default function Header() {
+
   const [locOpen, setLocOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -21,88 +20,101 @@ export default function Header() {
 
   const menuRef = useRef(null);
 
-  /* ================= USER ================= */
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token || localStorage.getItem("token");
 
-  /* ================= CLOSE MENU ON OUTSIDE CLICK ================= */
+  /* ================= CLOSE MENU ================= */
+
   useEffect(() => {
+
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
+
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
+
   }, []);
 
-  /* ================= LOAD SELECTED / DEFAULT ADDRESS ================= */
+  /* ================= LOAD ADDRESS ================= */
+
   useEffect(() => {
+
     const loadAddress = async () => {
-      // 1️⃣ Selected address from localStorage
+
       const saved = localStorage.getItem("selected_address");
+
       if (saved) {
         const addr = JSON.parse(saved);
-        setLocation(
-          `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`
-        );
+        setLocation(`${addr.address_line1}${addr.city ? ", " + addr.city : ""}`);
         return;
       }
 
-      // 2️⃣ Fallback to default address from backend
       if (!token) return;
 
       try {
+
         const res = await axios.get(
           "http://localhost:4000/api/addresses",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const list = Array.isArray(res.data) ? res.data : [];
+
         const def = list.find(
           (a) => a.is_default === 1 || a.is_default === true
         );
 
         if (def) {
-          localStorage.setItem(
-            "selected_address",
-            JSON.stringify(def)
-          );
-          setLocation(
-            `${def.address_line1}${def.city ? ", " + def.city : ""}`
-          );
+          localStorage.setItem("selected_address", JSON.stringify(def));
+          setLocation(`${def.address_line1}${def.city ? ", " + def.city : ""}`);
         }
+
       } catch (err) {
         console.error("Header address load error:", err.message);
       }
+
     };
 
     loadAddress();
+
   }, [token]);
 
   /* ================= SEARCH ================= */
+
   useEffect(() => {
+
     if (!query) {
       setResults([]);
       return;
     }
 
     const timeout = setTimeout(async () => {
+
       try {
+
         const res = await axios.get(
           `http://localhost:4000/api/products/search?q=${query}`
         );
+
         setResults(res.data || []);
+
       } catch {
         setResults([]);
       }
+
     }, 300);
 
     return () => clearTimeout(timeout);
+
   }, [query]);
 
-  /* ================= REDUX DATA ================= */
+  /* ================= REDUX ================= */
+
   const cartCount = useSelector((s) =>
     s.cart.items.reduce((a, b) => a + b.qty, 0)
   );
@@ -113,31 +125,37 @@ export default function Header() {
 
   return (
     <>
-      <OfferStrip />
 
-      <header className="bg-red-600 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 py-2">
+      {/* ================= HEADER ================= */}
+
+      <header className="bg-red-600 sticky top-0 z-50 shadow-md">
+
+        <div className="max-w-7xl mx-auto flex items-center gap-6 px-6 py-5">
 
           {/* LOGO */}
+
           <Link to="/" className="flex-shrink-0">
-            <img src={db4freshlogo} alt="logo" className="h-10" />
+            <img src={db4freshlogo} alt="logo" className="h-12" />
           </Link>
 
           {/* LOCATION */}
+
           <button
             onClick={() => setLocOpen(true)}
-            className="hidden sm:flex items-center text-xs bg-red-500 px-3 py-2 rounded-lg text-white hover:bg-red-400"
+            className="hidden sm:flex items-center text-sm bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-400"
           >
             {location}
           </button>
 
           {/* SEARCH */}
+
           <div className="relative flex-1 hidden sm:block">
+
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search for milk, fruits, snacks..."
-              className="w-full px-4 py-2 rounded-xl text-sm outline-none"
+              className="w-full px-6 py-3 rounded-xl text-sm outline-none shadow-inner"
             />
 
             {query && (
@@ -146,40 +164,38 @@ export default function Header() {
                 onSelect={(value) => setQuery(value)}
               />
             )}
+
           </div>
 
           {/* RIGHT ACTIONS */}
-          <div className="flex items-center gap-4 text-white ml-auto">
-            <Link to="/" className="flex items-center gap-1 text-sm">
-              <FiHome size={16} /> Home
-            </Link>
-            {/* HOME */}
-<Link
-  to="/"
-  className="flex items-center gap-1 text-sm ">
-  <FiHome size={16} />
-  Home
-</Link>
- 
 
-            <Link to="/wishlist" className="flex items-center gap-1 text-sm">
+          <div className="flex items-center gap-6 text-white ml-auto text-sm">
+
+            <Link to="/" className="flex items-center gap-1">
+              <FiHome size={18} /> Home
+            </Link>
+
+            <Link to="/wishlist" className="flex items-center gap-1">
               <FaHeart /> {wishlistCount}
             </Link>
-           
-            <Link to="/account" className="text-sm">My Account</Link>
- 
 
-            <Link to="/account" className="text-sm">
+            <Link to="/account">
               My Account
             </Link>
-            <Link to="/account" className="text-sm">My Account</Link>
 
-            <Link to="/cart" className="text-sm">
+            {/* CART BUTTON */}
+
+            <Link
+              to="/cart"
+              className="bg-white text-red-600 px-4 py-2 rounded-lg font-semibold"
+            >
               Cart ({cartCount})
             </Link>
 
             {/* USER MENU */}
+
             <div className="relative" ref={menuRef}>
+
               <button
                 onClick={() => setMenuOpen((p) => !p)}
                 className="p-2 rounded-full hover:bg-red-500"
@@ -188,9 +204,12 @@ export default function Header() {
               </button>
 
               {menuOpen && (
+
                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
+
                   {user ? (
                     <>
+
                       <p className="px-4 py-2 text-xs text-gray-500">
                         Hi, {user.name}
                       </p>
@@ -220,38 +239,44 @@ export default function Header() {
                       >
                         Logout
                       </button>
+
                     </>
                   ) : (
+
                     <Link
                       to="/auth"
                       className="block px-4 py-2 hover:bg-gray-100"
                     >
                       Login
                     </Link>
+
                   )}
+
                 </div>
+
               )}
+
             </div>
+
           </div>
+
         </div>
+
       </header>
 
       {/* LOCATION MODAL */}
+
       {locOpen && (
         <LocationModal
           isOpen={locOpen}
           onClose={() => setLocOpen(false)}
           onSelect={(addr) => {
-            localStorage.setItem(
-              "selected_address",
-              JSON.stringify(addr)
-            );
-            setLocation(
-              `${addr.address_line1}${addr.city ? ", " + addr.city : ""}`
-            );
+            localStorage.setItem("selected_address", JSON.stringify(addr));
+            setLocation(`${addr.address_line1}${addr.city ? ", " + addr.city : ""}`);
           }}
         />
       )}
+
     </>
   );
 }

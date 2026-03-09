@@ -1,5 +1,3 @@
-
-
 import dotenv from "dotenv";
 dotenv.config(); // MUST BE FIRST
 

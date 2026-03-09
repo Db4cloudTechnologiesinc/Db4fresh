@@ -1,4 +1,4 @@
-
+ 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
  
@@ -6,13 +6,12 @@ export default function AddProduct() {
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
  
-
   /* =============================
      FORM STATE
   ============================== */
   const [form, setForm] = useState({
     name: "",
-    
+   
     category_id: "",
     subcategory_id: "",
     brand: "",
@@ -53,19 +52,12 @@ export default function AddProduct() {
       .catch(console.error);
   }, [form.category_id]);
  
-
-    // ✅ FIXED: Dates added
-    manufactureDate: "",
-    expiryDate: "",
-  });
-
   /* =============================
      IMAGES
   ============================== */
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
  
-
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setImageFiles(files);
@@ -91,29 +83,6 @@ export default function AddProduct() {
     return json.images || [];
   };
  
-
-  const uploadImagesToBackend = async () => {
-    try {
-      const data = new FormData();
-      imageFiles.forEach((img) => data.append("images", img));
-
-      const res = await fetch("http://localhost:4000/api/products/upload", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: data,
-      });
-
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.images || [];
-    } catch (err) {
-      console.error("Upload error:", err);
-      return [];
-    }
-  };
-
   /* =============================
      VARIANTS
   ============================== */
@@ -125,11 +94,6 @@ export default function AddProduct() {
     const copy = [...variants];
     copy[i][key] = value;
     setVariants(copy);
-
-  const handleVariantChange = (idx, field, value) => {
-    const updated = [...variants];
-    updated[idx][field] = value;
-    setVariants(updated);
   };
  
   const addVariant = () =>
@@ -164,19 +128,6 @@ export default function AddProduct() {
  
     const images = await uploadImages();
  
-
-    // ✅ Validation
-    if (new Date(form.expiryDate) <= new Date(form.manufactureDate)) {
-      alert("Expiry date must be after manufacture date");
-      return;
-    }
-
-    let imageUrls = [];
-    if (imageFiles.length > 0) {
-      imageUrls = await uploadImagesToBackend();
-    }
-
-    // ✅ FIXED PAYLOAD
     const payload = {
       name: form.name,
       category_id: Number(form.category_id),
@@ -191,12 +142,6 @@ export default function AddProduct() {
       manufacture_date: form.manufactureDate,
       expiry_date: form.expiryDate,
       images,
-
-      // ✅ IMPORTANT
-      manufacture_date: form.manufactureDate,
-      expiry_date: form.expiryDate,
-
-      images: imageUrls,
       active: 1,
       variants: variants
         .filter((v) => v.variant_label && v.price)
@@ -222,19 +167,6 @@ export default function AddProduct() {
     if (!res.ok) {
       alert(json.message || "Failed to add product");
       return;
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        alert(json.message || "Failed to add product");
-        return;
-      }
-
-      alert("✅ Product added successfully!");
-      navigate("/admin/products");
-    } catch (err) {
-      console.error(err);
-      alert("Network error");
     }
  
     alert("✅ Product added successfully");
@@ -252,10 +184,6 @@ export default function AddProduct() {
  
       <form onSubmit={handleSubmit} className="space-y-4">
  
-    <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-red-600">Add New Product</h2>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
         <input
           className="w-full p-3 border rounded"
           placeholder="Product Name"
@@ -267,7 +195,6 @@ export default function AddProduct() {
         />
  
         {/* CATEGORY */}
-
         <select
           className="w-full p-3 border rounded"
           value={form.category_id}
@@ -317,37 +244,27 @@ export default function AddProduct() {
         <input
           className="w-full p-3 border rounded"
           placeholder="Brand"
-
-        <input
-          type="text"
-          placeholder="Brand"
-          className="w-full p-3 border rounded-lg"
           value={form.brand}
           onChange={(e) =>
             setForm({ ...form, brand: e.target.value })
           }
         />
  
-
         <textarea
           className="w-full p-3 border rounded"
           placeholder="Description"
           rows="3"
-          placeholder="Description"
-          className="w-full p-3 border rounded-lg"
           value={form.description}
           onChange={(e) =>
             setForm({ ...form, description: e.target.value })
           }
         />
  
-
         <div className="flex gap-3">
           <input
             type="number"
             placeholder="Weight"
             className="w-full p-3 border rounded"
-            className="w-full p-3 border rounded-lg"
             value={form.weight}
             onChange={(e) =>
               setForm({ ...form, weight: e.target.value })
@@ -373,56 +290,12 @@ export default function AddProduct() {
           type="date"
           className="w-full p-3 border rounded"
           value={form.manufactureDate}
-
-        {/* ✅ DATES */}
-        <div>
-          <label>Date of Manufacture</label>
-          <input
-            type="date"
-            className="w-full p-3 border rounded-lg"
-            value={form.manufactureDate}
-            onChange={(e) =>
-              setForm({ ...form, manufactureDate: e.target.value })
-            }
-            required
-          />
-        </div>
-
-        <div>
-          <label>Expiry Date</label>
-          <input
-            type="date"
-            className="w-full p-3 border rounded-lg"
-            value={form.expiryDate}
-            onChange={(e) =>
-              setForm({ ...form, expiryDate: e.target.value })
-            }
-            required
-          />
-        </div>
-
-        <textarea
-          rows="2"
-          placeholder="Highlights"
-          className="w-full p-3 border rounded-lg"
-          value={form.highlights}
-          onChange={(e) =>
-            setForm({ ...form, highlights: e.target.value })
-          }
-        />
-
-        <textarea
-          rows="2"
-          placeholder="Return Policy"
-          className="w-full p-3 border rounded-lg"
-          value={form.return_policy}
           onChange={(e) =>
             setForm({ ...form, manufactureDate: e.target.value })
           }
           required
         />
  
-
         <input
           type="date"
           className="w-full p-3 border rounded"
@@ -455,21 +328,6 @@ export default function AddProduct() {
           <div key={i} className="border p-3 rounded space-y-2">
             <input
               placeholder="Label"
-
-        <input type="file" multiple accept="image/*" onChange={handleImageUpload} />
-
-        <div className="flex gap-2 flex-wrap">
-          {previews.map((src, i) => (
-            <img key={i} src={src} alt="preview" className="w-20 h-20 rounded" />
-          ))}
-        </div>
-
-        <h3 className="font-semibold text-red-600">Variants</h3>
-
-        {variants.map((v, idx) => (
-          <div key={idx} className="border p-3 rounded space-y-2">
-            <input
-              placeholder="Variant Label"
               value={v.variant_label}
               onChange={(e) =>
                 updateVariant(
@@ -485,15 +343,6 @@ export default function AddProduct() {
               value={v.price}
               onChange={(e) =>
                 updateVariant(i, "price", e.target.value)
-                handleVariantChange(idx, "price", e.target.value)
-              }
-            />
-            <input
-              type="number"
-              placeholder="MRP"
-              value={v.mrp}
-              onChange={(e) =>
-                handleVariantChange(idx, "mrp", e.target.value)
               }
             />
             <input
@@ -504,20 +353,11 @@ export default function AddProduct() {
                 updateVariant(i, "stock", e.target.value)
               }
             />
-            <input
-              placeholder="SKU"
-              value={v.sku}
-              onChange={(e) =>
-                handleVariantChange(idx, "sku", e.target.value)
-              }
-            />
-
             {variants.length > 1 && (
               <button
                 type="button"
                 className="text-red-500"
                 onClick={() => removeVariant(i)}
-                onClick={() => removeVariant(idx)}
               >
                 Remove
               </button>
@@ -534,16 +374,12 @@ export default function AddProduct() {
         </button>
  
         <button className="w-full bg-black text-white p-3 rounded">
-
-        <button
-          type="submit"
-          className="w-full bg-black text-white p-3 rounded-lg"
-        >
           Save Product
         </button>
       </form>
     </div>
   );
 }
+ 
  
  

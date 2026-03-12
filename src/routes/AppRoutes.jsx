@@ -19,6 +19,7 @@ import OrderDetails from "../pages/OrderDetails";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import MyOrders from "../pages/MyOrders";
+import ComingSoon from "../pages/ComingSoon";
 
 /* ================= ADMIN ================= */
 import AdminLogin from "../Admin/AdminLogin";
@@ -58,10 +59,11 @@ export default function AppRoutes() {
       <Route path="/order-failed" element={<OrderFailed />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/wishlist" element={<Wishlist />} />
+      <Route path="/coming-soon/:category" element={<ComingSoon />} />
 
       {/* ================= USER ORDERS ================= */}
       <Route path="/orders" element={<MyOrders />} />
-      <Route path="/orders/:id" element={<OrderDetails />} />
+      <Route path="/orders/:id" element={<OrderDetails />} />++++++++++
 
       <Route path="/profile" element={<Profile />} />
       <Route path="/account" element={<Account />} />

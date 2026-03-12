@@ -15,11 +15,10 @@ export default function AdminNavbar() {
             // sessionStorage.removeItem("admin_auth"); // UPDATED
             // window.location.href = "/admin/login";
             localStorage.removeItem("admin_auth");
-localStorage.removeItem("admin_token");
-window.location.href = "/admin/login";
-
+            localStorage.removeItem("admin_token");
+            window.location.href = "/admin/login";
           }}
-        >
+          >
           Logout
         </button>
       </div>

@@ -1,4 +1,137 @@
 
+// import React from "react";
+// import { Link } from "react-router-dom";
+// import { useDispatch, useSelector } from "react-redux";
+// import {
+//   addToWishlist,
+//   removeFromWishlist,
+// } from "../features/wishlist/wishlistSlice";
+// import { FaHeart, FaRegHeart } from "react-icons/fa";
+// import AddToCartButton from "./AddToCartButton";
+
+// /* IMAGE HELPER */
+// const getImageUrl = (p) => {
+//   if (Array.isArray(p.images) && p.images.length > 0) {
+//     const img = p.images[0];
+//     if (typeof img === "string") return img;
+//     if (typeof img === "object" && img.url) return img.url;
+//   }
+//   return "/placeholder.png";
+// };
+
+// export default function ProductCard({ p }) {
+//   const dispatch = useDispatch();
+//   const wishlist = useSelector((s) => s.wishlist.items);
+
+//   if (!p?.id) return null;
+
+//   const img = getImageUrl(p);
+
+//   /* STOCK */
+//   const stock = Number(p.stock || 0);
+
+//   /* PRICE + MRP + QUANTITY */
+//   const price = Number(p.price || 0);
+//   const mrp = p.mrp ;
+//   const variantLabel = p.variant_label || "";
+
+//   /* WISHLIST CHECK */
+//   const isWishlisted = wishlist.some(
+//     (i) => i.productId === p.id
+//   );
+
+//   const handleWishlist = (e) => {
+//     e.preventDefault();
+//     e.stopPropagation();
+
+//     if (isWishlisted) {
+//       dispatch(removeFromWishlist(p.id));
+//     } else {
+//       dispatch(
+//         addToWishlist({
+//           productId: p.id,
+//           name: p.name,
+//           price,
+//           image: img,
+//           variantLabel,
+//         })
+//       );
+//     }
+//   };
+
+//   return (
+//     <div className="bg-white rounded-xl shadow hover:shadow-md transition p-3 w-[200px]">
+
+//       {/* IMAGE */}
+//       <Link to={`/product/${p.id}`}>
+//         <div className="relative h-[140px] flex items-center justify-center">
+
+//           {/* Wishlist */}
+//           <button
+//             onClick={handleWishlist}
+//             className="absolute top-1 left-1 bg-white rounded-full p-1 shadow"
+//           >
+//             {isWishlisted ? (
+//               <FaHeart className="text-red-600" size={14} />
+//             ) : (
+//               <FaRegHeart className="text-gray-400" size={14} />
+//             )}
+//           </button>
+
+//           <img
+//             src={img}
+//             alt={p.name}
+//             className="max-h-full object-contain"
+//             onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+//           />
+//         </div>
+//       </Link>
+
+//       {/* PRODUCT NAME */}
+//       <h3 className="text-sm font-semibold mt-2 line-clamp-2">
+//         {p.name}
+//       </h3>
+
+//       {/* QUANTITY */}
+//       {variantLabel && (
+//         <p className="text-xs text-gray-500">{variantLabel}</p>
+//       )}
+
+//       {/* PRICE */}
+//       <div className="flex items-center gap-2 mt-1">
+//         <span className="text-lg font-bold text-black">
+//           ₹{price}
+//         </span>
+
+//         {mrp && mrp > price && (
+//           <span className="text-sm text-gray-400 line-through">
+//             ₹{mrp}
+//           </span>
+//         )}
+//       </div>
+
+//       {/* ADD BUTTON */}
+//       <div className="mt-3">
+//         {stock > 0 ? (
+//           <AddToCartButton
+//             productId={p.id}
+//             name={p.name}
+//             price={price}
+//             image={img}
+//             variantId={null}
+//             variantLabel={variantLabel}
+//             stock={stock}
+//           />
+//         ) : (
+//           <span className="text-xs text-red-500 font-semibold">
+//             Out of Stock
+//           </span>
+//         )}
+//       </div>
+
+//     </div>
+//   );
+// }
 import React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,23 +160,17 @@ export default function ProductCard({ p }) {
 
   const img = getImageUrl(p);
 
-  /* ✅ ALWAYS USE BACKEND TOTAL STOCK */
   const stock = Number(p.stock || 0);
 
-  /* Variant (only for passing variantId if exists) */
-  const defaultVariant =
-    Array.isArray(p.variants) && p.variants.length > 0
-      ? p.variants[0]
-      : null;
+  const price = Number(p.price || 0);
+  const mrp = p.mrp || null;
+  const variantLabel = p.variant_label || "";
 
-  const price =
-    defaultVariant?.price ?? Number(p.price ?? 0);
-
-  const mrp =
-    defaultVariant?.mrp ?? p.mrp ?? null;
-
-  const variantLabel =
-    defaultVariant?.variant_label || "";
+  /* DISCOUNT CALCULATION */
+  const discount =
+    mrp && mrp > price
+      ? Math.round(((mrp - price) / mrp) * 100)
+      : 0;
 
   const isWishlisted = wishlist.some(
     (i) => i.productId === p.id
@@ -69,16 +196,23 @@ export default function ProductCard({ p }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden">
-      
-      {/* IMAGE SECTION */}
+    <div className="bg-white rounded-xl shadow hover:shadow-md transition p-3 w-[200px]">
+
+      {/* IMAGE */}
       <Link to={`/product/${p.id}`}>
-        <div className="relative w-full h-[200px] bg-white overflow-hidden">
-          
+        <div className="relative h-[140px] flex items-center justify-center">
+
+          {/* DISCOUNT BADGE (TOP RIGHT) */}
+          {discount > 0 && (
+            <div className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold px-2 py-[2px] rounded">
+              {discount}% OFF
+            </div>
+          )}
+
           {/* Wishlist */}
           <button
             onClick={handleWishlist}
-            className="absolute top-2 left-2 bg-white rounded-full p-1 shadow z-10"
+            className="absolute top-1 left-1 bg-white rounded-full p-1 shadow"
           >
             {isWishlisted ? (
               <FaHeart className="text-red-600" size={14} />
@@ -87,74 +221,57 @@ export default function ProductCard({ p }) {
             )}
           </button>
 
-          {/* Product Image */}
           <img
             src={img}
             alt={p.name}
-            loading="lazy"
+            className="max-h-full object-contain"
             onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-            className="w-full h-full object-cover block"
           />
         </div>
       </Link>
 
-      {/* DETAILS */}
-      <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="bg-green-700 text-white text-sm font-bold px-4 py-[2px] rounded-md">
-              ₹{price}
-            </span>
+      {/* PRODUCT NAME */}
+      <h3 className="text-sm font-semibold mt-2 line-clamp-2">
+        {p.name}
+      </h3>
 
-            {mrp && mrp > price && (
-              <span className="text-xs text-gray-400 line-through">
-                ₹{mrp}
-              </span>
-            )}
-          </div>
+      {/* QUANTITY */}
+      {variantLabel && (
+        <p className="text-xs text-gray-500">{variantLabel}</p>
+      )}
 
-          {stock > 0 && (
-            <AddToCartButton
-              productId={p.id}
-              name={p.name}
-              price={price}
-              image={img}
-              variantId={defaultVariant?.id}
-              variantLabel={variantLabel}
-              stock={stock}
-              small
-            />
-          )}
-        </div>
+      {/* PRICE */}
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-lg font-bold text-black">
+          ₹{price}
+        </span>
 
         {mrp && mrp > price && (
-          <p className="text-xs text-green-700 font-semibold mt-0.5">
-            ₹{mrp - price} OFF
-          </p>
+          <span className="text-sm text-gray-400 line-through">
+            ₹{mrp}
+          </span>
         )}
-
-        <h3 className="text-base font-semibold mt-3 line-clamp-2">
-          {p.name}
-        </h3>
-
-        {variantLabel && (
-          <p className="text-xs text-gray-500">
-            {variantLabel}
-          </p>
-        )}
-
-        <div className="mt-1 text-xs">
-          {stock <= 0 ? (
-            <span className="text-red-500 font-semibold">
-              Out of Stock
-            </span>
-          ) : (
-            <span className="text-gray-600">
-              {/* Delivery in 30mins */}
-            </span>
-          )}
-        </div>
       </div>
+
+      {/* ADD BUTTON */}
+      <div className="mt-3">
+        {stock > 0 ? (
+          <AddToCartButton
+            productId={p.id}
+            name={p.name}
+            price={price}
+            image={img}
+            variantId={null}
+            variantLabel={variantLabel}
+            stock={stock}
+          />
+        ) : (
+          <span className="text-xs text-red-500 font-semibold">
+            Out of Stock
+          </span>
+        )}
+      </div>
+
     </div>
   );
 }

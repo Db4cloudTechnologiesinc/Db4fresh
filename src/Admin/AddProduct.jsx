@@ -260,32 +260,6 @@ export default function AddProduct() {
           }
         />
  
-        <div className="flex gap-3">
-          <input
-            type="number"
-            placeholder="Weight"
-            className="w-full p-3 border rounded"
-            value={form.weight}
-            onChange={(e) =>
-              setForm({ ...form, weight: e.target.value })
-            }
-          />
-          <select
-            className="w-full p-3 border rounded"
-            value={form.unit}
-            onChange={(e) =>
-              setForm({ ...form, unit: e.target.value })
-            }
-          >
-            <option value="">Unit</option>
-            <option value="g">g</option>
-            <option value="kg">kg</option>
-            <option value="ml">ml</option>
-            <option value="L">L</option>
-            <option value="pcs">pcs</option>
-          </select>
-        </div>
- 
         <input
           type="date"
           className="w-full p-3 border rounded"
@@ -319,7 +293,7 @@ export default function AddProduct() {
           ))}
         </div>
  
-        {/* VARIANTS */}
+        {/* VARIANTS
         <h3 className="font-semibold text-red-600">
           Variants
         </h3>
@@ -363,8 +337,73 @@ export default function AddProduct() {
               </button>
             )}
           </div>
-        ))}
- 
+        ))} */}
+ {/* VARIANTS */}
+<h3 className="font-semibold text-red-600">Variants</h3>
+
+{variants.map((v, i) => (
+  <div key={i} className="border p-4 rounded-lg space-y-3">
+
+    <div className="grid grid-cols-4 gap-3">
+
+      {/* VARIANT LABEL */}
+      <input
+        className="border p-2 rounded"
+        placeholder="Label (ex: 500 g)"
+        value={v.variant_label}
+        onChange={(e) =>
+          updateVariant(i, "variant_label", e.target.value)
+        }
+      />
+
+      {/* MRP */}
+      <input
+        type="number"
+        className="border p-2 rounded"
+        placeholder="MRP"
+        value={v.mrp}
+        onChange={(e) =>
+          updateVariant(i, "mrp", e.target.value)
+        }
+      />
+
+      {/* PRICE */}
+      <input
+        type="number"
+        className="border p-2 rounded"
+        placeholder="Price"
+        value={v.price}
+        onChange={(e) =>
+          updateVariant(i, "price", e.target.value)
+        }
+      />
+
+      {/* STOCK */}
+      <input
+        type="number"
+        className="border p-2 rounded"
+        placeholder="Stock"
+        value={v.stock}
+        onChange={(e) =>
+          updateVariant(i, "stock", e.target.value)
+        }
+      />
+
+    </div>
+
+    {/* REMOVE BUTTON */}
+    {variants.length > 1 && (
+      <button
+        type="button"
+        className="text-red-500 text-sm"
+        onClick={() => removeVariant(i)}
+      >
+        Remove Variant
+      </button>
+    )}
+
+  </div>
+))}
         <button
           type="button"
           onClick={addVariant}

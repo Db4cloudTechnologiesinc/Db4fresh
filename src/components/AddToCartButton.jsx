@@ -33,49 +33,48 @@ export default function AddToCartButton({
     );
   }
 
-  /* ➕ STEPPER (ITEM EXISTS IN CART) */
+  /* 🟢 STEP CONTROLLER (Blinkit Style) */
   if (cartItem) {
     return (
-      <div className="flex items-center border rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between border border-red-600 rounded-lg w-[90px] h-[34px] bg-white">
+
+        {/* MINUS */}
         <button
           onClick={() =>
             cartItem.qty === 1
-              ? dispatch(
-                  removeFromCart({ productId, variantId })
-                )
-              : dispatch(
-                  decreaseQty({ productId, variantId })
-                )
+              ? dispatch(removeFromCart({ productId, variantId }))
+              : dispatch(decreaseQty({ productId, variantId }))
           }
-          className="px-2 py-1 bg-gray-100"
+          className="flex-1 text-red-700 text-lg font-bold"
         >
           −
         </button>
 
-        <span className="px-3 text-sm font-semibold">
+        {/* QUANTITY */}
+        <span className="flex-1 text-center text-sm font-semibold">
           {cartItem.qty}
         </span>
 
+        {/* PLUS */}
         <button
           onClick={() =>
-            dispatch(
-              increaseQty({ productId, variantId })
-            )
+            dispatch(increaseQty({ productId, variantId }))
           }
           disabled={cartItem.qty >= stock}
-          className={`px-2 py-1 ${
+          className={`flex-1 text-lg font-bold ${
             cartItem.qty >= stock
-              ? "bg-gray-200 cursor-not-allowed"
-              : "bg-gray-100"
+              ? "text-gray-400"
+              : "text-red-700"
           }`}
         >
           +
         </button>
+
       </div>
     );
   }
 
-  /* 🟢 ADD BUTTON (NOT IN CART) */
+  /* 🟢 ADD BUTTON */
   return (
     <button
       onClick={() =>
@@ -92,32 +91,9 @@ export default function AddToCartButton({
           })
         )
       }
-      className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-lg"
+      className="w-[90px] h-[34px] border border-red-600 text-red-700 font-semibold rounded-lg hover:bg-red-50 transition"
     >
       ADD
-     </button>
-    /* 🟢 ADD BUTTON (NOT IN CART) */
-
-  // <button
-  //   onClick={() =>
-  //     dispatch(
-  //       addToCart({
-  //         productId,
-  //         variantId,
-  //         name,
-  //         price,
-  //         image,
-  //         variantLabel,
-  //         stock,
-  //         qty: 1,
-  //       })
-  //     )
-  //   }
-  //   className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold"
-  // >
-  //   Add to Cart
-  // </button>
-);
-
-  
+    </button>
+  );
 }

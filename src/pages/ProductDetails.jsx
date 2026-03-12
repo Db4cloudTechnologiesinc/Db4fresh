@@ -59,7 +59,13 @@ export default function ProductDetails() {
   }, [id]);
 
   if (!product) return null;
+const price = selectedVariant?.price ?? product.price ?? 0;
+const mrp = selectedVariant?.mrp ?? product.mrp ?? null;
 
+const discount =
+  mrp && mrp > price
+    ? Math.round(((mrp - price) / mrp) * 100)
+    : 0;
   const isWishlisted = wishlist.some(
     (i) => i.productId === product.id
   );
@@ -121,11 +127,23 @@ export default function ProductDetails() {
 
           {/* MAIN IMAGE */}
           <div className="flex-1">
-            <div
+            {/* <div
               className="relative"
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
-            >
+            > */}
+            <div
+  className="relative"
+  onTouchStart={handleTouchStart}
+  onTouchEnd={handleTouchEnd}
+>
+
+  {/* DISCOUNT BADGE */}
+  {discount > 0 && (
+    <div className="absolute top-4 left-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded z-10">
+      {discount}% OFF
+    </div>
+  )}
               {/* ❤️ + 🔗 ON IMAGE */}
               <div className="absolute top-4 right-4 flex gap-3 z-10">
 
@@ -205,12 +223,13 @@ export default function ProductDetails() {
         </div>
 
         {/* RIGHT DETAILS SECTION */}
-        <div className="bg-white rounded-2xl shadow p-6 space-y-4">
-
+        <div className="bg-white rounded-2xl shadow p-6 space-y-4 sticky top-24 h-fit">
           <h1 className="text-3xl font-semibold">{product.name}</h1>
-          <p className="text-gray-500">
-            Brand: {product.brand}
-          </p>
+          {product.brand && (
+  <p className="text-gray-500">
+    Brand: <span className="font-medium">{product.brand}</span>
+  </p>
+)}
 
           {/* RATING */}
           <div className="flex items-center gap-2">
@@ -224,9 +243,51 @@ export default function ProductDetails() {
           </div>
 
           {/* PRICE */}
-          <div className="text-3xl font-bold text-green-600">
-            ₹{selectedVariant?.price ?? product.price}
-          </div>
+        
+          {/* <div className="flex items-center gap-3 text-3xl font-bold">
+
+  <span className="text-green-600">
+    ₹{price}
+  </span>
+
+  {mrp && mrp > price && (
+    <span className="text-gray-400 line-through text-xl">
+      ₹{mrp}
+    </span>
+  )}
+
+</div>
+
+{mrp && mrp > price && (
+  <p className="text-green-600 text-sm font-medium">
+    You save ₹{mrp - price}
+  </p>
+)} */}
+<div className="flex items-center gap-3 mt-2">
+
+  <span className="text-3xl font-bold text-green-600">
+    ₹{price}
+  </span>
+
+  {mrp && mrp > price && (
+    <>
+      <span className="text-xl text-gray-400 line-through">
+        ₹{mrp}
+      </span>
+
+      <span className="text-green-600 text-sm font-semibold">
+        {discount}% OFF
+      </span>
+    </>
+  )}
+
+</div>
+
+{mrp && mrp > price && (
+  <p className="text-green-600 text-sm">
+    You save ₹{mrp - price}
+  </p>
+)}
 
           <p className="text-gray-600">
             {product.description}

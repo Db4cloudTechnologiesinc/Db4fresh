@@ -15,6 +15,7 @@ import CheckoutPanel from "../components/CheckoutPanel";
 
 import { setAddresses } from "../features/address/addressSlice";
 import { fetchAddressesApi } from "../features/address/addressApi";
+import ProductCard from "../components/ProductCard";
 
 export default function Cart() {
   const dispatch = useDispatch();
@@ -32,6 +33,7 @@ export default function Cart() {
   /* ================= UI STATES ================= */
   const [giftWrap, setGiftWrap] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [suggestedProducts, setSuggestedProducts] = useState([]);
 
   /* ================= SELECTED ADDRESS ================= */
   const selectedAddress =
@@ -52,6 +54,31 @@ export default function Cart() {
       dispatch(fetchProducts());
     }
   }, [dispatch, products.length]);
+  /* ================= FETCH SUGGESTED PRODUCTS ================= */
+useEffect(() => {
+  const fetchSuggestions = async () => {
+    if (!items.length) {
+      setSuggestedProducts([]);
+      return;
+    }
+
+    try {
+      const productId = items[items.length - 1].productId;
+
+      const res = await fetch(
+        `http://localhost:4000/api/products/cart-suggestions/${productId}`
+      );
+
+      const data = await res.json();
+
+      setSuggestedProducts(data.slice(0, 4));
+    } catch (err) {
+      console.error("Suggestion fetch error:", err);
+    }
+  };
+
+  fetchSuggestions();
+}, [items]);
 
   /* ================= BILL CALCULATIONS ================= */
   const itemTotal = items.reduce(
@@ -82,13 +109,6 @@ export default function Cart() {
     navigate("/checkout");
   };
 
-  /* ================= SUGGESTED PRODUCTS ================= */
-  const cartProductIds = items.map((i) => i.productId);
-
-  const suggestedProducts =
-    products
-      ?.filter((p) => !cartProductIds.includes(p.id))
-      .slice(0, 4) || [];
 
   /* ================= EMPTY CART ================= */
   if (!items.length) {
@@ -213,50 +233,10 @@ export default function Cart() {
                 </h3>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {suggestedProducts.map((p) => {
-                    const img =
-                      p.images?.[0]?.url ||
-                      p.images?.[0] ||
-                      "/placeholder.png";
-
-                    const v = p.variants?.[0];
-                    const price = v?.price || p.price || 0;
-
-                    return (
-                      <div
-                        key={p.id}
-                        className="bg-white rounded-lg shadow p-3"
-                      >
-                        <Link to={`/product/${p.id}`}>
-                          <img
-                            src={img}
-                            alt={p.name}
-                            className="w-full h-24 object-contain mb-2"
-                          />
-                          <p className="text-sm font-medium line-clamp-2">
-                            {p.name}
-                          </p>
-                        </Link>
-
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="font-bold text-sm">
-                            ₹{price}
-                          </span>
-
-                          <AddToCartButton
-                            productId={p.id}
-                            variantId={v?.id}
-                            name={p.name}
-                            price={price}
-                            image={img}
-                            variantLabel={v?.variant_label}
-                            stock={v?.stock ?? 0}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+  {suggestedProducts.map((p) => (
+    <ProductCard key={p.id} p={p} />
+  ))}
+</div>
               </div>
             )}
           </div>

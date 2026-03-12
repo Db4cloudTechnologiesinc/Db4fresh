@@ -19,8 +19,8 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
 
-  password: process.env.DB_PASSWORD || "Nikhilch@45",
-  database: process.env.DB_NAME || "db4fresh",
+  password: process.env.DB_PASSWORD || "Swetha@123",
+  database: process.env.DB_NAME || "dbfresh",
 
 
   waitForConnections: true,

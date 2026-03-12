@@ -1,6 +1,3 @@
-
-
- 
 import db from "../config/db.js";
  
 /* ================= IMAGE UPLOAD ================= */
@@ -85,17 +82,45 @@ export const getProducts = async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT
-        p.*,
-        COALESCE(MIN(v.price), 0) AS price,
-        COALESCE(SUM(v.stock), 0) AS stock
-      FROM products p
-      LEFT JOIN product_variants v ON v.product_id = p.id
-      WHERE p.active = 1
-      GROUP BY p.id
-      ORDER BY p.id DESC
+  p.*,
+
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
+
+(
+  SELECT v.price
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS price,
+
+(
+  SELECT v.mrp
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS mrp,
+
+(
+  SELECT SUM(v.stock)
+  FROM product_variants v
+  WHERE v.product_id = p.id
+) AS stock
+
+FROM products p
+WHERE p.active = 1
+ORDER BY p.id DESC
     `);
- 
+
     res.json(normalizeProducts(rows));
+
   } catch (err) {
     console.error("GET PRODUCTS ERROR:", err);
     res.status(500).json({ message: "Server error" });
@@ -131,26 +156,67 @@ export const getProductsBySubcategory = async (req, res) => {
  
 /* ================= SINGLE PRODUCT ================= */
 export const getProduct = async (req, res) => {
-  const [rows] = await db.query(
-    "SELECT * FROM products WHERE id = ?",
-    [req.params.id]
-  );
- 
-  if (!rows.length) {
-    return res.status(404).json({ message: "Product not found" });
+  try {
+    const productId = req.params.id;
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        p.*,
+        (
+          SELECT v.variant_label
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS variant_label,
+        (
+          SELECT v.price
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS price,
+        (
+          SELECT v.mrp
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS mrp
+      FROM products p
+      WHERE p.id = ?
+      `,
+      [productId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const product = normalizeProducts(rows)[0];
+
+    /* GET ALL VARIANTS */
+    const [variants] = await db.query(
+      `
+      SELECT
+        id,
+        variant_label,
+        price,
+        mrp,
+        stock
+      FROM product_variants
+      WHERE product_id = ?
+      `,
+      [productId]
+    );
+
+    product.variants = variants;
+
+    res.json(product);
+
+  } catch (err) {
+    console.error("GET PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
- 
-  const product = normalizeProducts(rows)[0];
- 
-  const [variants] = await db.query(
-    "SELECT * FROM product_variants WHERE product_id = ?",
-    [req.params.id]
-  );
- 
-  product.variants = variants;
-  res.json(product);
 };
- 
 /* ================= UPDATE PRODUCT ================= */
 export const updateProduct = async (req, res) => {
   try {
@@ -250,22 +316,61 @@ export const getProductReviews = async (req, res) => {
   );
   res.json(rows);
 };
- 
-export const getSimilarProducts = async (req, res) => {
-  const [rows] = await db.query(`
-    SELECT
-      p.*,
-      COALESCE(MIN(v.price), 0) AS price,
-      COALESCE(SUM(v.stock), 0) AS stock
-    FROM products p
-    LEFT JOIN product_variants v ON v.product_id = p.id
-    WHERE p.active = 1 AND p.id != ?
-    GROUP BY p.id
-    ORDER BY RAND()
-    LIMIT 10
-  `, [req.params.id]);
- 
-  res.json(normalizeProducts(rows));
+/* ================= SIMILAR PRODUCTS ================= */
+  export const getSimilarProducts = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        p.*,
+
+        (
+          SELECT v.variant_label
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS variant_label,
+
+        (
+          SELECT v.price
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS price,
+
+        (
+          SELECT v.mrp
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS mrp,
+
+        (
+          SELECT SUM(v.stock)
+          FROM product_variants v
+          WHERE v.product_id = p.id
+        ) AS stock
+
+      FROM products p
+      WHERE p.active = 1
+      AND p.id != ?
+      ORDER BY RAND()
+      LIMIT 10
+      `,
+      [productId]
+    );
+
+    res.json(normalizeProducts(rows));
+
+  } catch (err) {
+    console.error("SIMILAR PRODUCTS ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
  
  
@@ -283,41 +388,56 @@ export const searchProducts = async (req, res) => {
  
   res.json(rows);
 };
- 
+/* ================= TOP PICKS (HOME) ================= */
 export const getTopPicks = async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT
         p.*,
+
         (
-          SELECT MIN(v.price)
+          SELECT v.variant_label
           FROM product_variants v
           WHERE v.product_id = p.id
-        ) AS variant_price,
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS variant_label,
+
+        (
+          SELECT v.price
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS price,
+
+        (
+          SELECT v.mrp
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS mrp,
+
         (
           SELECT SUM(v.stock)
           FROM product_variants v
           WHERE v.product_id = p.id
-        ) AS variant_stock
+        ) AS stock
+
       FROM products p
       WHERE p.active = 1
       ORDER BY p.id DESC
       LIMIT 10
     `);
- 
-    const normalized = rows.map((p) => ({
-      ...p,
-      price: Number(p.variant_price ?? p.price ?? 0),
-      stock: Number(p.variant_stock ?? 0),
-    }));
- 
-    res.json(normalizeProducts(normalized));
+
+    res.json(normalizeProducts(rows));
+
   } catch (err) {
-    console.error("TOP PICKS ERROR:", err.message);
+    console.error("TOP PICKS ERROR:", err);
     res.status(500).json({ error: err.message });
   }
-};
- 
+}; 
  
  
 /* ================= GROUPED PRODUCTS (HOME) ================= */
@@ -370,10 +490,77 @@ const normalizeProducts = (rows) => {
       ...p,
       images: normalizedImages,
       image: normalizedImages[0]?.url || null,
-      price: Number(p.price) || 0,
-      stock: Number(p.stock) || 0,
+      price: Number(p.price)||null ,
+      mrp: Number(p.mrp) || null, 
+      stock: Number(p.stock) || null,
     };
   });
+};
+export const getCartSuggestions = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const [product] = await db.query(
+      "SELECT category_id FROM products WHERE id = ?",
+      [productId]
+    );
+
+    if (!product.length) {
+      return res.json([]);
+    }
+
+    const categoryId = product[0].category_id;
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        p.*,
+
+        (
+          SELECT v.variant_label
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS variant_label,
+
+        (
+          SELECT v.price
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS price,
+
+        (
+          SELECT v.mrp
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          ORDER BY v.price ASC
+          LIMIT 1
+        ) AS mrp,
+
+        (
+          SELECT SUM(v.stock)
+          FROM product_variants v
+          WHERE v.product_id = p.id
+        ) AS stock
+
+      FROM products p
+      WHERE p.category_id = ?
+      AND p.id != ?
+      AND p.active = 1
+      LIMIT 10
+      `,
+      [categoryId, productId]
+    );
+
+    res.json(normalizeProducts(rows));
+
+  } catch (err) {
+    console.error("CART SUGGESTIONS ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
  
  

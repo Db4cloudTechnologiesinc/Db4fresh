@@ -15,6 +15,7 @@ import {
   searchProducts,
   getTopPicks,
   getGroupedProducts,
+  getCartSuggestions
 } from "../controllers/productController.js";
  
 import upload from "../middleware/upload.js";
@@ -33,6 +34,8 @@ router.get("/search", searchProducts);
  
 /* ================= SUBCATEGORY ================= */
 router.get("/subcategory/:subcategoryId", getProductsBySubcategory);
+/* ================= CART SUGGESTIONS ================= */
+router.get("/cart-suggestions/:id", getCartSuggestions);
  
 /* ================= MAIN PRODUCTS ================= */
 router.get("/", getProducts);

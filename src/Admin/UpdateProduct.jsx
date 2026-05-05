@@ -8,13 +8,15 @@ export default function UpdateProduct() {
   const navigate = useNavigate();
  
   /* ================= STATES ================= */
-  const [product, setProduct] = useState({
+ const [product, setProduct] = useState({
     name: "",
     category_id: "",
     subcategory_id: "",
     description: "",
     manufacture_date: "",
     expiry_date: "",
+    is_free_delivery: false,
+    is_today_deal: false,
   });
  
   const [categories, setCategories] = useState([]);
@@ -46,6 +48,8 @@ export default function UpdateProduct() {
           description: data.description || "",
           manufacture_date: data.manufacture_date?.split("T")[0] || "",
           expiry_date: data.expiry_date?.split("T")[0] || "",
+          is_free_delivery: data.is_free_delivery === 1,
+          is_today_deal: data.is_today_deal === 1,
         });
  
         setVariants(
@@ -145,6 +149,9 @@ export default function UpdateProduct() {
       images,
       variants: safeVariants,
       removedVariantIds,
+      is_free_delivery: product.is_free_delivery ? 1 : 0,
+      is_today_deal: product.is_today_deal ? 1 : 0,
+      is_super_store: 1,
     };
  
     console.log("UPDATE PAYLOAD 👉", payload);
@@ -316,6 +323,33 @@ export default function UpdateProduct() {
             </button>
           </div>
         ))}
+        {/* 🔥 BANNER FLAGS */}
+        <div className="border p-3 rounded">
+          <h3 className="font-semibold mb-2">Banner Settings</h3>
+
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={product.is_free_delivery}
+              onChange={e =>
+                setProduct({ ...product, is_free_delivery: e.target.checked })
+              }
+            />
+            Free Delivery
+          </label>
+
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={product.is_today_deal}
+              onChange={e =>
+                setProduct({ ...product, is_today_deal: e.target.checked })
+              }
+            />
+            Today's Deal
+          </label>
+        </div>
+
  
         <button className="bg-red-600 text-white py-2 rounded w-full">
           Update Product

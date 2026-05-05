@@ -8,6 +8,7 @@ import {
   getRevenueDetails,
 } from "../controllers/admin.js";
 import adminAuth from "../middleware/adminAuth.js";
+import { getAdminProducts } from "../controllers/productController.js";
  
 const router = express.Router();
  
@@ -15,14 +16,15 @@ const router = express.Router();
 router.post("/login", loginAdmin);
  
 /* DASHBOARD */
-router.get("/stats", adminAuth, getDashboardStats);
+router.get("/dashboard",  getDashboardStats);
  
 /* USERS */
-router.get("/users/:id/history", adminAuth, getUserHistory);
+router.get("/users/:id/history", getUserHistory);
+router.get("/products", getAdminProducts);
  
 /* REVENUE */
-router.get("/revenue", adminAuth, getRevenueStats);
-router.get("/revenue/details", adminAuth, getRevenueDetails);
+router.get("/revenue", getRevenueStats);
+router.get("/revenue/details", getRevenueDetails);
  
 export default router;
  

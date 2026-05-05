@@ -1,3 +1,6 @@
+
+
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
@@ -19,6 +22,12 @@ import OrderDetails from "../pages/OrderDetails";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 import MyOrders from "../pages/MyOrders";
+import FreeDelivery from "../pages/offers/FreeDelivery";
+import FiftyOff from "../pages/offers/FiftyOff";
+import TodaysDeal from "../pages/offers/TodaysDeal";
+import SuperStore from "../pages/offers/SuperStore";
+import OfferZone from "../pages/offers/OfferZone";
+import BannerPage from "../pages/BannerPage";
 
 /* ================= ADMIN ================= */
 import AdminLogin from "../Admin/AdminLogin";
@@ -38,6 +47,8 @@ import Stock from "../Admin/Stock";
 import AdminOrderDetails from "../Admin/AdminOrderDetails";
 import CategoriesAdmin from "../Admin/Categories";
 import AdminSubcategories from "../Admin/AdminSubCategories";
+import AdminPriceUpdate from "../Admin/AdminPriceUpdate";
+import BulkPriceUpdate from "../Admin/BulkPriceUpdate";
 
 
 import DeliveryApp from "../db4fresh_delivery/DeliveryApp";
@@ -58,6 +69,13 @@ export default function AppRoutes() {
       <Route path="/order-failed" element={<OrderFailed />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/wishlist" element={<Wishlist />} />
+      <Route path="/banner/:type" element={<BannerPage />} />
+      <Route path="/offer-zone" element={<OfferZone />} />
+<Route path="/offers/free-delivery" element={<FreeDelivery />} />
+<Route path="/offers/50-off" element={<FiftyOff />} />
+<Route path="/offers/today" element={<TodaysDeal />} />
+<Route path="/super-store" element={<SuperStore />} />
+<Route path="/offers/offer-zone" element={<OfferZone />} />
 
       {/* ================= USER ORDERS ================= */}
       <Route path="/orders" element={<MyOrders />} />
@@ -84,6 +102,8 @@ export default function AppRoutes() {
           <Route path="products" element={<ProductList />} />
           <Route path="products/add" element={<AddProduct />} />
           <Route path="products/update/:id" element={<UpdateProduct />} />
+          <Route path="products/update-price" element={<AdminPriceUpdate />} />
+          <Route path="/admin/products/bulk-update" element={<BulkPriceUpdate />} />
           <Route path="categories" element={<CategoriesAdmin />} />
           <Route path="subcategories" element={<AdminSubcategories />} />
           <Route path="add-admin" element={<AddAdmin />} />

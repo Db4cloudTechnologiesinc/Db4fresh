@@ -10,21 +10,23 @@ export default function AddProduct() {
      FORM STATE
   ============================== */
   const [form, setForm] = useState({
-    name: "",
-   
-    category_id: "",
-    subcategory_id: "",
-    brand: "",
-    description: "",
-    unit: "",
-    weight: "",
-    highlights: "",
-    return_policy: "",
-    seller_id: "",
-    manufactureDate: "",
-    expiryDate: "",
-  });
- 
+  name: "",
+  category_id: "",
+  subcategory_id: "",
+  brand: "",
+  description: "",
+  unit: "",
+  weight: "",
+  highlights: "",
+  return_policy: "",
+  seller_id: "",
+  manufactureDate: "",
+  expiryDate: "",
+
+  // 🔥 NEW FLAGS
+  is_free_delivery: false,
+  is_today_deal: false,
+});
   /* =============================
      CATEGORY / SUBCATEGORY
   ============================== */
@@ -129,31 +131,37 @@ export default function AddProduct() {
     const images = await uploadImages();
  
     const payload = {
-      name: form.name,
-      category_id: Number(form.category_id),
-      subcategory_id: Number(form.subcategory_id),
-      brand: form.brand || null,
-      description: form.description || null,
-      unit: form.unit || null,
-      weight: form.weight || null,
-      highlights: form.highlights || null,
-      return_policy: form.return_policy || null,
-      seller_id: form.seller_id || null,
-      manufacture_date: form.manufactureDate,
-      expiry_date: form.expiryDate,
-      images,
-      active: 1,
-      variants: variants
-        .filter((v) => v.variant_label && v.price)
-        .map((v) => ({
-          variant_label: v.variant_label,
-          price: Number(v.price),
-          mrp: v.mrp ? Number(v.mrp) : null,
-          stock: v.stock ? Number(v.stock) : 0,
-          sku: v.sku || null,
-        })),
-    };
- 
+  name: form.name,
+  category_id: Number(form.category_id),
+  subcategory_id: Number(form.subcategory_id),
+  brand: form.brand || null,
+  description: form.description || null,
+  unit: form.unit || null,
+  weight: form.weight || null,
+  highlights: form.highlights || null,
+  return_policy: form.return_policy || null,
+  seller_id: form.seller_id || null,
+  manufacture_date: form.manufactureDate,
+  expiry_date: form.expiryDate,
+  images,
+
+  // 🔥 ADD THESE
+  is_free_delivery: form.is_free_delivery ? 1 : 0,
+  is_today_deal: form.is_today_deal ? 1 : 0,
+  is_super_store: 1, // default
+
+  active: 1,
+
+  variants: variants
+    .filter((v) => v.variant_label && v.price)
+    .map((v) => ({
+      variant_label: v.variant_label,
+      price: Number(v.price),
+      mrp: v.mrp ? Number(v.mrp) : null,
+      stock: v.stock ? Number(v.stock) : 0,
+      sku: v.sku || null,
+    })),
+};
     const res = await fetch(
       "http://localhost:4000/api/products",
       {
@@ -293,51 +301,7 @@ export default function AddProduct() {
           ))}
         </div>
  
-        {/* VARIANTS
-        <h3 className="font-semibold text-red-600">
-          Variants
-        </h3>
- 
-        {variants.map((v, i) => (
-          <div key={i} className="border p-3 rounded space-y-2">
-            <input
-              placeholder="Label"
-              value={v.variant_label}
-              onChange={(e) =>
-                updateVariant(
-                  i,
-                  "variant_label",
-                  e.target.value
-                )
-              }
-            />
-            <input
-              type="number"
-              placeholder="Price"
-              value={v.price}
-              onChange={(e) =>
-                updateVariant(i, "price", e.target.value)
-              }
-            />
-            <input
-              type="number"
-              placeholder="Stock"
-              value={v.stock}
-              onChange={(e) =>
-                updateVariant(i, "stock", e.target.value)
-              }
-            />
-            {variants.length > 1 && (
-              <button
-                type="button"
-                className="text-red-500"
-                onClick={() => removeVariant(i)}
-              >
-                Remove
-              </button>
-            )}
-          </div>
-        ))} */}
+       
  {/* VARIANTS */}
 <h3 className="font-semibold text-red-600">Variants</h3>
 
@@ -411,6 +375,32 @@ export default function AddProduct() {
         >
           + Add Variant
         </button>
+        {/* 🔥 BANNER FLAGS */}
+<div className="border p-4 rounded space-y-2">
+  <h3 className="font-semibold text-red-600">Banner Settings</h3>
+
+  <label className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={form.is_free_delivery}
+      onChange={(e) =>
+        setForm({ ...form, is_free_delivery: e.target.checked })
+      }
+    />
+    Free Delivery
+  </label>
+
+  <label className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      checked={form.is_today_deal}
+      onChange={(e) =>
+        setForm({ ...form, is_today_deal: e.target.checked })
+      }
+    />
+    Today's Deal
+  </label>
+</div>
  
         <button className="w-full bg-black text-white p-3 rounded">
           Save Product

@@ -2,8 +2,23 @@
 import express from "express";
 import db from "../config/db.js";
 import upload from "../middleware/upload.js";
- 
 const router = express.Router();
+const getSubcategoriesByCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    const [rows] = await db.query(
+      "SELECT id, name, image FROM subcategories WHERE category_id = ? ORDER BY name",
+      [categoryId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("BY CATEGORY ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 /* ======================================
    GET ALL SUBCATEGORIES (ADMIN)
 ====================================== */
@@ -25,6 +40,7 @@ router.get("/", async (req, res) => {
 /* ======================================
    GET SUBCATEGORIES BY CATEGORY ID
 ====================================== */
+router.get("/by-category/:categoryId", getSubcategoriesByCategory);
 router.get("/:categoryId", async (req, res) => {
   try {
     const { categoryId } = req.params;
@@ -155,6 +171,6 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
- 
+
 export default router;
  

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,15 +13,11 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(true);
 
-  /* =========================
-     LOAD DASHBOARD STATS
-  ========================= */
   useEffect(() => {
     console.log("✅ Dashboard mounted");
 
     const token = localStorage.getItem("adminToken");
 
-    // 🔒 If no token, go back to login
     if (!token) {
       navigate("/admin/login");
       return;
@@ -31,7 +26,7 @@ export default function Dashboard() {
     const loadStats = async () => {
       try {
         const res = await fetch(
-          "http://127.0.0.1:4000/api/admin/stats",
+          "http://localhost:4000/api/admin/dashboard", // ✅ FIXED URL
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -39,11 +34,8 @@ export default function Dashboard() {
           }
         );
 
-        if (!res.ok) {
-          throw new Error("Dashboard stats API failed");
-        }
-
         const data = await res.json();
+
         console.log("📊 Dashboard stats:", data);
 
         setStats({
@@ -52,6 +44,7 @@ export default function Dashboard() {
           users: Number(data.users) || 0,
           revenue: Number(data.revenue) || 0,
         });
+
       } catch (error) {
         console.error("❌ Dashboard error:", error);
       } finally {
@@ -62,20 +55,10 @@ export default function Dashboard() {
     loadStats();
   }, [navigate]);
 
-  /* =========================
-     LOADING STATE
-  ========================= */
   if (loading) {
-    return (
-      <div className="p-6 text-gray-600">
-        Loading dashboard...
-      </div>
-    );
+    return <div className="p-6 text-gray-600">Loading dashboard...</div>;
   }
 
-  /* =========================
-     UI
-  ========================= */
   return (
     <div className="p-6">
       <h2 className="text-2xl font-semibold mb-6">
@@ -117,9 +100,6 @@ export default function Dashboard() {
   );
 }
 
-/* =========================
-   CARD COMPONENT
-========================= */
 function DashboardCard({ title, value, onClick, valueClass = "" }) {
   return (
     <div

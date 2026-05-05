@@ -5,26 +5,21 @@ import db from "../config/db.js";
 ========================= */
 export const getDashboardStats = async (req, res) => {
   try {
-    const [[products]] = await db.query(
-      "SELECT COUNT(*) AS count FROM products"
-    );
+    const [[products]] = await db.query("SELECT COUNT(*) AS count FROM products");
+    const [[orders]] = await db.query("SELECT COUNT(*) AS count FROM orders");
+    const [[users]] = await db.query("SELECT COUNT(*) AS count FROM users");
 
-    const [[orders]] = await db.query(
-      "SELECT COUNT(*) AS count FROM orders"
-    );
+    const [[revenue]] = await db.query(`
+      SELECT IFNULL(SUM(total_amount), 0) AS amount
+      FROM orders
+    `);
 
-    const [[users]] = await db.query(
-      "SELECT COUNT(*) AS count FROM users"
-    );
-
-    const [[revenue]] = await db.query(
-      `SELECT IFNULL(SUM(total_amount), 0) AS amount
-       FROM orders
-       WHERE
-         (payment_method = 'ONLINE' AND payment_status = 'paid')
-         OR
-         (payment_method = 'COD' AND order_status = 'DELIVERED')`
-    );
+    console.log("DEBUG:", {
+      products,
+      orders,
+      users,
+      revenue,
+    });
 
     res.json({
       products: products.count,
@@ -32,6 +27,7 @@ export const getDashboardStats = async (req, res) => {
       users: users.count,
       revenue: revenue.amount,
     });
+
   } catch (err) {
     console.error("DASHBOARD ERROR:", err);
     res.status(500).json({
@@ -42,7 +38,6 @@ export const getDashboardStats = async (req, res) => {
     });
   }
 };
-
 /* =========================
    USER HISTORY
 ========================= */

@@ -1,0 +1,92 @@
+.order-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.order-main {
+  flex: 3;
+}
+
+.order-side {
+  flex: 1;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: #ffeeba;
+  color: #856404;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+  gap: 15px;
+}
+
+.item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.qty {
+  background: #ffe5e5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.total {
+  font-weight: bold;
+}
+
+.total-box {
+  margin-top: 20px;
+  text-align: right;
+  font-size: 18px;
+  font-weight: bold;
+  color: red;
+}
+
+.final {
+  color: red;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  margin-top: 10px;
+  width: 100%;
+  background: red;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}

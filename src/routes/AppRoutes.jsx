@@ -95,7 +95,7 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="orders" element={<Orders />} />
-          <Route path="order/:id" element={<AdminOrderDetails />} />
+          <Route path="orders/:id" element={<AdminOrderDetails />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />
           <Route path="users/:id/history" element={<UserHistory />} />

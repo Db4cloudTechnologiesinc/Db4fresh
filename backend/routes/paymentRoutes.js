@@ -3,6 +3,7 @@ import express from "express";
 import crypto from "crypto";
 import { getRazorpayInstance } from "../config/razorpay.js";
 import db from "../config/db.js";
+import { sendMessage } from "../kafka/producer.js";
 
 const router = express.Router();
 
@@ -76,7 +77,21 @@ console.log("QUERY:", req.query);
    WHERE id = ?`,
   [razorpay_payment_id, orderId]
 );
+     /* GET AMOUNT */
+const [rows] = await db.query(
+  "SELECT total_amount FROM orders WHERE id = ?",
+  [orderId]
+);
 
+const amount = rows[0]?.total_amount || 0;
+
+/* SEND TO KAFKA */
+await sendMessage("payment-topic", {
+  orderId,
+  paymentId: razorpay_payment_id,
+  status: "SUCCESS",
+  amount,
+});
 
       console.log("✅ Payment verified & order updated:", orderId);
 

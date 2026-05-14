@@ -117,11 +117,11 @@ export default function Orders() {
 
                 <td className="p-3">
                   <button
-                    onClick={() => navigate(`/admin/orders/${order.id}`)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    View
-                  </button>
+  onClick={() => navigate(`/admin/orders/${order.id}`)}
+  className="text-blue-600"
+>
+  View
+</button>
                 </td>
               </tr>
             ))

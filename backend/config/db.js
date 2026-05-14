@@ -1,17 +1,4 @@
 
-// import mysql from "mysql2/promise";
-
-// const db = mysql.createPool({
-//   host: "localhost",
-//   user: "root",
-//   password: "Nikhilch@45",
-//   database: "db4fresh",
-//   waitForConnections: true,
-//   connectionLimit: 10,
-//   queueLimit: 0
-// });
-
-// export default db;
 import mysql from "mysql2/promise";
 
 
@@ -19,8 +6,8 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
 
-  password: process.env.DB_PASSWORD || "Swetha@123",
-  database: process.env.DB_NAME || "dbfresh",
+  password: process.env.DB_PASSWORD || "Nikhilch@45",
+  database: process.env.DB_NAME || "db4fresh",
 
 
   waitForConnections: true,

@@ -4,7 +4,6 @@ import axios from "axios";
 
 export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
 
   const [form, setForm] = useState({
     name: "",
@@ -19,8 +18,9 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   });
 
   useEffect(() => {
-    if (editData) setForm(editData);
-    else {
+    if (editData) {
+      setForm(editData);
+    } else {
       setForm({
         name: "",
         phone: "",
@@ -38,6 +38,13 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
     if (!form.address_line1 || form.pincode.length !== 6) {
       alert("Address & valid pincode required");
       return;
@@ -45,22 +52,37 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
 
     try {
       setLoading(true);
+
       const res = await axios.post(
         "http://localhost:4000/api/addresses",
         form,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           timeout: 8000,
         }
       );
+
       onSave(res.data);
       onClose();
     } catch (err) {
-      console.error(err);
-      alert("Failed to save address");
+      console.error("Address Save Error:", err.response?.data || err.message);
+      alert(
+        err.response?.data?.message ||
+        "Failed to save address. Please login again."
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChange = (key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   return (
@@ -83,9 +105,7 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
             className="w-full border p-3 rounded-lg mb-3"
             placeholder={label}
             value={form[key] || ""}
-            onChange={(e) =>
-              setForm({ ...form, [key]: e.target.value })
-            }
+            onChange={(e) => handleChange(key, e.target.value)}
           />
         ))}
 
@@ -93,19 +113,22 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
           <input
             type="checkbox"
             checked={form.is_default}
-            onChange={(e) =>
-              setForm({ ...form, is_default: e.target.checked })
-            }
+            onChange={(e) => handleChange("is_default", e.target.checked)}
           />
           Set as default address
         </label>
 
         <div className="flex justify-between">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 rounded"
+          >
             Cancel
           </button>
+
           <button
             onClick={handleSubmit}
+            disabled={loading}
             className="px-4 py-2 bg-red-600 text-white rounded"
           >
             {loading ? "Saving..." : "Save Address"}

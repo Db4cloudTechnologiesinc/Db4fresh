@@ -1,143 +1,4 @@
-<<<<<<< HEAD
-=======
-
-// import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// export default function Dashboard() {
-//   const navigate = useNavigate();
-
-//   const [stats, setStats] = useState({
-//     products: 0,
-//     orders: 0,
-//     users: 0,
-//     revenue: 0,
-//   });
-
-//   const [loading, setLoading] = useState(true);
-
-//   /* =========================
-//      LOAD DASHBOARD STATS
-//   ========================= */
-//   useEffect(() => {
-//     console.log("✅ Dashboard mounted");
-
-//     const token = localStorage.getItem("adminToken");
-
-//     // 🔒 If no token, go back to login
-//     if (!token) {
-//       navigate("/admin/login");
-//       return;
-//     }
-
-//     const loadStats = async () => {
-//       try {
-//         const res = await fetch(
-//           "http://127.0.0.1:4000/api/admin/stats",
-//           {
-//             headers: {
-//               Authorization: `Bearer ${token}`,
-//             },
-//           }
-//         );
-
-//         if (!res.ok) {
-//           throw new Error("Dashboard stats API failed");
-//         }
-
-//         const data = await res.json();
-//         console.log("📊 Dashboard stats:", data);
-
-//         setStats({
-//           products: Number(data.products) || 0,
-//           orders: Number(data.orders) || 0,
-//           users: Number(data.users) || 0,
-//           revenue: Number(data.revenue) || 0,
-//         });
-//       } catch (error) {
-//         console.error("❌ Dashboard error:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadStats();
-//   }, [navigate]);
-
-//   /* =========================
-//      LOADING STATE
-//   ========================= */
-//   if (loading) {
-//     return (
-//       <div className="p-6 text-gray-600">
-//         Loading dashboard...
-//       </div>
-//     );
-//   }
-
-//   /* =========================
-//      UI
-//   ========================= */
-//   return (
-//     <div className="p-6">
-//       <h2 className="text-2xl font-semibold mb-6">
-//         Dashboard Overview
-//       </h2>
-
-//       <p className="text-xs text-gray-400 mb-4">
-//         Products: {stats.products} | Orders: {stats.orders} | Users:{" "}
-//         {stats.users} | Revenue: ₹{stats.revenue}
-//       </p>
-
-//       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-//         <DashboardCard
-//           title="Products"
-//           value={stats.products}
-//           onClick={() => navigate("/admin/products")}
-//         />
-
-//         <DashboardCard
-//           title="Orders"
-//           value={stats.orders}
-//           onClick={() => navigate("/admin/orders")}
-//         />
-
-//         <DashboardCard
-//           title="Users"
-//           value={stats.users}
-//           onClick={() => navigate("/admin/users")}
-//         />
-
-//         <DashboardCard
-//           title="Revenue"
-//           value={`₹${stats.revenue}`}
-//           valueClass="text-green-600"
-//           onClick={() => navigate("/admin/revenue")}
-//         />
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* =========================
-//    CARD COMPONENT
-// ========================= */
-// function DashboardCard({ title, value, onClick, valueClass = "" }) {
-//   return (
-//     <div
-//       onClick={onClick}
-//       className="p-5 bg-white shadow rounded cursor-pointer
-//                  hover:shadow-lg hover:scale-[1.02] transition"
-//     >
-//       <p className="text-gray-500">{title}</p>
-//       <p className={`text-xl font-bold ${valueClass}`}>
-//         {value}
-//       </p>
-//     </div>
-//   );
-// }
->>>>>>> 9014f7e7 (add kafka.js)
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
@@ -152,7 +13,6 @@ export default function Dashboard() {
 
   const [notifications, setNotifications] = useState([]);
   const [showBox, setShowBox] = useState(false);
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -175,11 +35,8 @@ export default function Dashboard() {
         );
 
         const data = await res.json();
-<<<<<<< HEAD
 
         console.log("📊 Dashboard stats:", data);
-=======
->>>>>>> 9014f7e7 (add kafka.js)
 
         setStats({
           products: Number(data.products) || 0,
@@ -198,36 +55,6 @@ export default function Dashboard() {
     loadStats();
   }, [navigate]);
 
-<<<<<<< HEAD
-=======
-  /* =========================
-     🔔 WEBSOCKET NOTIFICATIONS
-  ========================= */
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000");
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      console.log("🔔 Notification:", data);
-
-      // 🔊 SOUND (optional)
-      try {
-        const audio = new Audio("/notification.mp3");
-        audio.play();
-      } catch {}
-
-      // ✅ keep only last 10 notifications
-      setNotifications((prev) => [data, ...prev.slice(0, 9)]);
-    };
-
-    return () => ws.close();
-  }, []);
-
-  /* =========================
-     LOADING STATE
-  ========================= */
->>>>>>> 9014f7e7 (add kafka.js)
   if (loading) {
     return <div className="p-6 text-gray-600">Loading dashboard...</div>;
   }

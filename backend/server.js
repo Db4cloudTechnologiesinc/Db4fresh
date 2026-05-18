@@ -6,21 +6,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-<<<<<<< HEAD
  
 /* ================= FIX __dirname FOR ES MODULE ================= */
-=======
-
-/* ================= KAFKA ================= */
-import { connectProducer } from "./kafka/producer.js";
-import runAdminConsumer from "./kafka/adminConsumer.js";
-import runPaymentConsumer from "./kafka/paymentConsumer.js";
-
-/* ================= WEBSOCKET ================= */
-import { WebSocketServer } from "ws";
-
-/* ================= FIX __dirname ================= */
->>>>>>> 9014f7e7 (add kafka.js)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -45,14 +32,10 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import subCategoryRoutes from "./routes/subCategoryRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
-<<<<<<< HEAD
 import bannerProductsRoutes from "./routes/bannerProducts.js";
  
  
  
-=======
-
->>>>>>> 9014f7e7 (add kafka.js)
 /* ================= DELIVERY ROUTES ================= */
 import authMiddleware from "./middleware/authMiddleware.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
@@ -80,7 +63,6 @@ app.use(
 /* ================= BODY PARSER ================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-<<<<<<< HEAD
  
 /* ================= STATIC FILES (FINAL FIX) ================= */
  
@@ -96,12 +78,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(uploadsPath));
  
-=======
-
-/* ================= STATIC FILES ================= */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
->>>>>>> 9014f7e7 (add kafka.js)
 /* ================= API ROUTES ================= */
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
@@ -119,10 +95,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/payment", paymentRoutes);
-<<<<<<< HEAD
 app.use("/api/banner-products", bannerProductsRoutes);
-=======
->>>>>>> 9014f7e7 (add kafka.js)
 
 /* ================= DELIVERY SYSTEM ================= */
 app.use("/api/delivery", deliveryRoutes);
@@ -142,7 +115,6 @@ app.get("/", (req, res) => {
  
 /* ================= ERROR HANDLER ================= */
 app.use(errorHandler);
-<<<<<<< HEAD
  
 /* ================= SERVER START ================= */
 const PORT = process.env.PORT || 4000;
@@ -152,59 +124,3 @@ app.listen(PORT, () => {
   console.log("📂 Serving uploads from:", path.join(__dirname, "uploads"));
 });
  
-=======
-
-/* ================= WEBSOCKET SETUP ================= */
-const wss = new WebSocketServer({ port: 5000 });
-
-let clients = [];
-
-wss.on("connection", (ws) => {
-  console.log("🔔 Admin connected for notifications");
-
-  clients.push(ws);
-
-  ws.on("close", () => {
-    clients = clients.filter((c) => c !== ws);
-  });
-});
-
-/* 🔔 EXPORT FUNCTION FOR KAFKA */
-export const sendNotification = (data) => {
-  clients.forEach((client) => {
-    try {
-      client.send(JSON.stringify(data));
-    } catch (err) {
-      console.error("WebSocket send error:", err);
-    }
-  });
-};
-
-/* ================= SERVER START ================= */
-const PORT = process.env.PORT || 4000;
-
-
-const startServer = async () => {
-  try {
-    console.log("⏳ Starting Server...");
-
-    // ✅ Start server FIRST
-    app.listen(PORT, () => {
-      console.log("🚀 Server running on port", PORT);
-      console.log("📡 WebSocket running on port 5000");
-    });
-
-    // ✅ Then connect Kafka (non-blocking)
-    connectProducer();
-    runAdminConsumer();
-    runPaymentConsumer();
-
-    console.log("✅ Kafka initialization triggered");
-
-  } catch (err) {
-    console.error("❌ Server startup error:", err);
-  }
-};
-
-startServer();
->>>>>>> 9014f7e7 (add kafka.js)

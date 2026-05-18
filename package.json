@@ -7,13 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-
     "zookeeper": "cd /d C:\\kafka\\kafka_2.13-3.9.2 && .\\bin\\windows\\zookeeper-server-start.bat .\\config\\zookeeper.properties",
     "kafka": "cd /d C:\\kafka\\kafka_2.13-3.9.2 && .\\bin\\windows\\kafka-server-start.bat .\\config\\server.properties",
-
     "backend": "cd backend && npm run dev",
     "frontend": "npm run dev",
-
     "start-all": "concurrently -k -n \"ZK,KAFKA,BE,FE\" -c \"yellow,blue,green,magenta\" \"npm run zookeeper\" \"powershell -Command Start-Sleep -Seconds 5; npm run kafka\" \"powershell -Command Start-Sleep -Seconds 12; npm run backend\" \"powershell -Command Start-Sleep -Seconds 12; npm run frontend\""
   },
   "dependencies": {
@@ -36,11 +33,7 @@
     "react-router-dom": "^6.22.3",
     "recharts": "^3.5.1",
     "redux-persist": "^6.0.0",
-<<<<<<< HEAD
     "xlsx": "^0.18.5"
-=======
-    "socket.io-client": "^4.8.3"
->>>>>>> 9014f7e7 (add kafka.js)
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",

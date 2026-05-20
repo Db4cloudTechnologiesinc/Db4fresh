@@ -7,15 +7,49 @@ import nodemailer from "nodemailer";
 /* ================= SIGNUP ================= */
 export const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    
+const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields required" });
-    }
+// ✅ Empty field check
+if (!name || !email || !password) {
+  return res.status(400).json({
+    message: "All fields required",
+  });
+}
+
+// ✅ Name validation
+const nameRegex = /^[A-Za-z ]+$/;
+
+if (!nameRegex.test(name)) {
+  return res.status(400).json({
+    message: "Name should contain only alphabets",
+  });
+}
+
+// ✅ Lowercase email validation
+const emailRegex =
+  /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+
+if (!emailRegex.test(email)) {
+  return res.status(400).json({
+    message: "Email should contain only lowercase letters",
+  });
+}
+
+// ✅ Strong password validation
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+if (!passwordRegex.test(password)) {
+  return res.status(400).json({
+    message:
+      "Password must contain uppercase, lowercase, number, special character and minimum 8 characters",
+  });
+}
 
     const [existing] = await db.query(
       "SELECT id FROM users WHERE email = ?",
-      [email]
+      [email.toLowerCase()]
     );
 
     if (existing.length > 0) {
@@ -26,7 +60,7 @@ export const signup = async (req, res) => {
 
     const [result] = await db.query(
       "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashed]
+      [name, email.toLowerCase(), hashed]
     );
 
     res.json({ message: "User created", id: result.insertId });

@@ -23,35 +23,67 @@ export default function Auth() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      if (isLogin) {
-        /* 🔐 LOGIN */
-        const res = await axios.post(`${API}/login`, {
-          email: form.email,
-          password: form.password,
-        });
+  // ✅ NAME VALIDATION
+  const nameRegex = /^[A-Za-z ]+$/;
 
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate("/");
-      } else {
-        /* 📝 SIGNUP */
-        await axios.post(`${API}/signup`, {
-          name: form.name,
-          email: form.email,
-          password: form.password,
-        });
+  // ✅ PASSWORD VALIDATION
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
-        alert(t("accountCreated"));
-        setIsLogin(true);
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || t("authFailed"));
+  // ✅ SIGNUP VALIDATIONS ONLY
+  if (!isLogin) {
+
+    // Check name
+    if (!nameRegex.test(form.name)) {
+      alert("Name should contain only alphabets");
+      return;
     }
-  };
 
+    // Convert email to lowercase
+     const emailRegex =
+    /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    if (!emailRegex.test(form.email.toLowerCase())) {
+      alert("Please enter a valid lowerCase email address");
+      return;
+    }
+
+    // Check password strength
+    if (!passwordRegex.test(form.password)) {
+      alert(
+        "Password must contain:\n• 1 Uppercase\n• 1 Lowercase\n• 1 Number\n• 1 Special Character\n• Minimum 8 characters"
+      );
+      return;
+    }
+  }
+
+  try {
+    if (isLogin) {
+      /* 🔐 LOGIN */
+      const res = await axios.post(`${API}/login`, {
+        email: form.email.toLowerCase(),
+        password: form.password,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/");
+    } else {
+      /* 📝 SIGNUP */
+      await axios.post(`${API}/signup`, {
+        name: form.name,
+        email: form.email.toLowerCase(),
+        password: form.password,
+      });
+
+      alert(t("accountCreated"));
+      setIsLogin(true);
+    }
+  } catch (err) {
+    alert(err.response?.data?.message || t("authFailed"));
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form
@@ -65,6 +97,7 @@ export default function Auth() {
         {!isLogin && (
           <input
             name="name"
+            minLength={3}
             placeholder={t("name")}
             className="w-full mb-3 p-3 border rounded"
             onChange={handleChange}
@@ -84,6 +117,7 @@ export default function Auth() {
         <input
           name="password"
           type="password"
+          minLength={8}
           placeholder={t("password")}
           className="w-full mb-2 p-3 border rounded"
           onChange={handleChange}

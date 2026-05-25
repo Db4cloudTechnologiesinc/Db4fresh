@@ -637,64 +637,78 @@ export const getSuggestedProducts = getSimilarProducts;
 //   }
 
 // };
+
 export const searchProducts = async (req, res) => {
 
   try {
 
     const q =
-      req.query.q?.toString().trim().toLowerCase() || "";
+      req.query.q?.trim().toLowerCase() || "";
 
     const [rows] = await db.query(
 
       `
       SELECT 
-  p.id,
-  p.name,
-  p.description,
-  p.active,
+        p.*,
 
-  c.name AS category_name,
-  s.name AS subcategory_name,
+        c.name AS category_name,
+        s.name AS subcategory_name,
 
-  (
-    SELECT v.variant_label
-    FROM product_variants v
-    WHERE v.product_id = p.id
-    LIMIT 1
-  ) AS variant_label,
+        /* IMAGE */
+        p.image,
 
-  (
-    SELECT v.price
-    FROM product_variants v
-    WHERE v.product_id = p.id
-    LIMIT 1
-  ) AS price,
+        /* VARIANT */
+        (
+          SELECT v.variant_label
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS variant_label,
 
-  (
-    SELECT SUM(v.stock)
-    FROM product_variants v
-    WHERE v.product_id = p.id
-  ) AS stock
+        /* PRICE */
+        (
+          SELECT v.price
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS price,
 
-FROM products p
+        /* MRP */
+        (
+          SELECT v.mrp
+          FROM product_variants v
+          WHERE v.product_id = p.id
+          LIMIT 1
+        ) AS mrp,
 
-LEFT JOIN categories c
-ON p.category_id = c.id
+        /* STOCK */
+        (
+          SELECT SUM(v.stock)
+          FROM product_variants v
+          WHERE v.product_id = p.id
+        ) AS stock
 
-LEFT JOIN subcategories s
-ON p.subcategory_id = s.id
+      FROM products p
 
-WHERE
-  p.active = 1
+      LEFT JOIN categories c
+      ON p.category_id = c.id
 
-AND
-(
-  LOWER(TRIM(p.name)) LIKE ?
-  OR LOWER(TRIM(c.name)) LIKE ?
-  OR LOWER(TRIM(s.name)) LIKE ?
-)
+      LEFT JOIN subcategories s
+      ON p.subcategory_id = s.id
 
-ORDER BY p.id DESC `,
+      WHERE
+        p.active = 1
+
+      AND
+      (
+        LOWER(p.name) LIKE ?
+        OR LOWER(c.name) LIKE ?
+        OR LOWER(s.name) LIKE ?
+      )
+
+      ORDER BY p.id DESC
+      `,
+
       [
         `%${q}%`,
         `%${q}%`,
@@ -707,7 +721,7 @@ ORDER BY p.id DESC `,
 
   } catch (err) {
 
-    console.log(err);
+    console.log("SEARCH ERROR =>", err);
 
     res.status(500).json({
       message: "Search failed"

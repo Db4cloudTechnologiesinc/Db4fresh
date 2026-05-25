@@ -18,6 +18,7 @@ import AddToCartButton from "../components/AddToCartButton";
 import ReviewsSection from "../components/ReviewSection";
 import SimilarProducts from "../components/SimilarProducts";
 import SuggestedProducts from "../components/SuggestedProducts";
+import { useLocation, useNavigate } from "react-router-dom";
 
 
 export default function ProductDetails() {
@@ -35,6 +36,11 @@ export default function ProductDetails() {
 
   const wishlist = useSelector((s) => s.wishlist.items);
   const touchStartX = useRef(0);
+  const location = useLocation();
+const navigate = useNavigate();
+
+const subcategoryName =
+  location.state?.subcategoryName;
 
   /* ================= FETCH PRODUCT ================= */
   useEffect(() => {
@@ -172,11 +178,7 @@ const price =
 
           {/* MAIN IMAGE */}
           <div className="flex-1">
-            {/* <div
-              className="relative"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            > */}
+        
             <div
   className="relative"
   onTouchStart={handleTouchStart}

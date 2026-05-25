@@ -9,6 +9,7 @@ import db4freshlogo from "../Assets/Db4freshlogo.png";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
+import Fuse from "fuse.js";
 
 export default function Header() {
 
@@ -84,67 +85,73 @@ export default function Header() {
 
   }, [token]);
 
-  /* ================= SEARCH ================= */
+/* ================= SEARCH ================= */
+useEffect(() => {
 
-  useEffect(() => {
-
-  const fetchProducts = async () => {
+  const fetchSuggestions = async () => {
 
     try {
-
-      const res = await axios.get(
-        "http://localhost:4000/api/products"
-      );
-
-      const allProducts = res.data || [];
-      console.log(allProducts[0]);
 
       const cleanQuery =
         query.trim().toLowerCase();
 
+      /* EMPTY INPUT */
       if (!cleanQuery) {
         setResults([]);
         return;
       }
 
-      const filtered = allProducts.filter((p) => {
+      /* API CALL */
+      const res = await axios.get(
+        `http://localhost:4000/api/products/search?q=${cleanQuery}`
+      );
 
-        const name =
-          p.name?.toLowerCase() || "";
+      const products =
+        res.data || [];
 
-        const category =
-  p.category_name?.toLowerCase() ||
-  p.category?.toLowerCase() ||
-  p.category?.name?.toLowerCase() ||
-  "";
+      /* FUZZY SEARCH */
+      const fuse = new Fuse(products, {
 
-const subcategory =
-  p.subcategory_name?.toLowerCase() ||
-  p.subcategory?.toLowerCase() ||
-  p.subcategory?.name?.toLowerCase() ||
-  "";
+        keys: [
+          "name",
+          "category_name",
+          "subcategory_name",
+        ],
 
-        return (
-          name.includes(cleanQuery) ||
-          category.includes(cleanQuery) ||
-          subcategory.includes(cleanQuery)
-        );
+        threshold: 0.4,
+
+        includeScore: true,
+
       });
 
-      setResults(filtered);
+      const fuzzyResults =
+        fuse.search(cleanQuery);
+
+      /* FINAL RESULTS */
+      const finalResults =
+        fuzzyResults.map((r) => r.item);
+
+      setResults(finalResults);
 
     } catch (err) {
 
-      console.log(err);
+      console.log(
+        "SEARCH ERROR =>",
+        err
+      );
+
       setResults([]);
 
     }
 
   };
 
-  const timeout = setTimeout(fetchProducts, 300);
+  /* DEBOUNCE */
+  const delay =
+    setTimeout(fetchSuggestions, 300);
 
-  return () => clearTimeout(timeout);
+  return () =>
+    clearTimeout(delay);
 
 }, [query]);
   /* ================= REDUX ================= */
@@ -184,13 +191,7 @@ const subcategory =
 
           <div className="relative flex-1 hidden md:block">
 
-            {/* <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for vegetables, fruits, snacks..."
-              className="w-full px-5 py-3 rounded-xl text-sm outline-none bg-white"
-            /> */}
-            <input
+  <input
   value={query}
 
   onChange={(e) =>
@@ -217,14 +218,49 @@ const subcategory =
 
   className="w-full px-5 py-3 rounded-xl text-sm outline-none bg-white"
 />
+{/* 
+            <input
+  value={query}
 
+  onChange={(e) =>
+    setQuery(e.target.value)
+  }
+  
+  onKeyDown={(e) => {
+
+    if (e.key === "Enter") {
+
+      const cleanQuery =
+        query.trim();
+
+      if (!cleanQuery) return;
+
+      window.location.href =
+        `/search?q=${cleanQuery}`;
+
+    }
+
+  }}
+
+  placeholder="Search for vegetables, fruits, snacks..."
+
+  className="w-full px-5 py-3 rounded-xl text-sm outline-none bg-white"
+/> */}
+{/* 
             {query && (
               <SearchSuggestions
                 results={results}
                 search={query}
                 onSelect={(value) => setQuery(value)}
               />
-            )}
+            )} */}
+            {query.trim() && results.length > 0 && (
+  <SearchSuggestions
+    results={results}
+    search={query}
+    onSelect={(value) => setQuery(value)}
+  />
+)}
 
           </div>
 

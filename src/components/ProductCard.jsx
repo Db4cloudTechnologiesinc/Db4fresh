@@ -36,7 +36,7 @@ const getImageUrl = (p) => {
 
   return "/placeholder.png";
 };
-export default function ProductCard({ p }) {
+export default function ProductCard({ p , subcategoryName}) {
   const dispatch = useDispatch();
   const wishlist = useSelector((s) => s.wishlist.items);
 
@@ -109,7 +109,12 @@ export default function ProductCard({ p }) {
     <div className="relative bg-white rounded-xl shadow hover:shadow-md transition p-3 w-[200px]">
 
       {/* IMAGE */}
-      <Link to={`/product/${p.id}`}>
+      <Link
+  to={`/product/${p.id}`}
+  state={{
+    subcategoryName,
+  }}
+>
         <div className="relative h-[150px] flex items-center justify-center mb-2">
 
           {/* 🔴 Expiry Badge */}

@@ -218,47 +218,15 @@ useEffect(() => {
 
   className="w-full px-5 py-3 rounded-xl text-sm outline-none bg-white"
 />
-{/* 
-            <input
-  value={query}
-
-  onChange={(e) =>
-    setQuery(e.target.value)
-  }
-  
-  onKeyDown={(e) => {
-
-    if (e.key === "Enter") {
-
-      const cleanQuery =
-        query.trim();
-
-      if (!cleanQuery) return;
-
-      window.location.href =
-        `/search?q=${cleanQuery}`;
-
-    }
-
-  }}
-
-  placeholder="Search for vegetables, fruits, snacks..."
-
-  className="w-full px-5 py-3 rounded-xl text-sm outline-none bg-white"
-/> */}
-{/* 
-            {query && (
-              <SearchSuggestions
-                results={results}
-                search={query}
-                onSelect={(value) => setQuery(value)}
-              />
-            )} */}
             {query.trim() && results.length > 0 && (
   <SearchSuggestions
     results={results}
     search={query}
-    onSelect={(value) => setQuery(value)}
+    onSelect={(value) => {
+      setQuery("");
+      setResults([]);
+    }
+    }
   />
 )}
 

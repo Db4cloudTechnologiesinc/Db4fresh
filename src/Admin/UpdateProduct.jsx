@@ -308,6 +308,16 @@ export default function UpdateProduct() {
               value={v.price}
               onChange={e => updateVariant(i, "price", e.target.value)}
             />
+             {/* MRP */}
+    <input
+      type="number"
+      className="border p-2 rounded"
+      placeholder="MRP"
+      value={v.mrp}
+      onChange={e =>
+        updateVariant(i, "mrp", e.target.value)
+      }
+    />
             <input
               type="number"
               placeholder="Stock"

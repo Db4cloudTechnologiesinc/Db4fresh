@@ -57,77 +57,111 @@ export default function Orders() {
 
       {/* ===== ORDERS TABLE ===== */}
       <table className="w-full bg-white rounded-lg shadow">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-3 text-left">Order ID</th>
-            <th className="p-3 text-left">User ID</th>
-            <th className="p-3 text-left">Amount</th>
-            <th className="p-3 text-left">Payment</th>
-            <th className="p-3 text-left">Status</th>
-            <th className="p-3 text-left">Actions</th>
-          </tr>
-        </thead>
+  <thead className="bg-gray-100">
+    <tr>
+      <th className="p-3 text-left">Order ID</th>
+      <th className="p-3 text-left">User ID</th>
+      <th className="p-3 text-left">Date</th>
+      <th className="p-3 text-left">Amount</th>
+      <th className="p-3 text-left">Payment Method</th>
+      <th className="p-3 text-left">Payment Status</th>
+      <th className="p-3 text-left">Delivery Slot</th>
+      <th className="p-3 text-left">Delivery Partner</th>
+      <th className="p-3 text-left">Status</th>
+      <th className="p-3 text-left">Actions</th>
+    </tr>
+  </thead>
 
-        <tbody>
-          {filteredOrders.length === 0 ? (
-            <tr>
-              <td colSpan="6" className="p-4 text-center text-gray-500">
-                No orders found
-              </td>
-            </tr>
-          ) : (
-            filteredOrders.map((order) => (
-              <tr key={order.id} className="border-t">
-                <td className="p-3 font-medium">
-                  #{String(order.id).padStart(4, "0")}
-                </td>
+  <tbody>
+    {filteredOrders.length === 0 ? (
+      <tr>
+        <td colSpan="10" className="p-4 text-center text-gray-500">
+          No orders found
+        </td>
+      </tr>
+    ) : (
+      filteredOrders.map((order) => (
+        <tr key={order.id} className="border-t hover:bg-gray-50">
+          {/* Order ID */}
+          <td className="p-3 font-medium">
+            #{String(order.id || 0).padStart(4, "0")}
+          </td>
 
-                <td className="p-3">{order.user_id ?? "-"}</td>
+          {/* User ID */}
+          <td className="p-3">{order.user_id ?? "-"}</td>
 
-                <td className="p-3 font-semibold">
-                  ₹{order.total_amount}
-                </td>
+          {/* Date */}
+          <td className="p-3">
+            {order.created_at
+              ? new Date(order.created_at).toLocaleDateString("en-IN")
+              : "-"}
+          </td>
 
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded text-sm ${
-                      order.payment_status === "paid"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {order.payment_status || "pending"}
-                  </span>
-                </td>
+          {/* Amount */}
+          <td className="p-3 font-semibold">
+            ₹{order.total_amount || 0}
+          </td>
 
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded text-sm ${
-                      order.order_status === "DELIVERED"
-                        ? "bg-green-100 text-green-700"
-                        : order.order_status === "PLACED" ||
-                          order.order_status === "CONFIRMED"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {order.order_status}
-                  </span>
-                </td>
+          {/* Payment Method */}
+          <td className="p-3">
+            {order.payment_method || "COD"}
+          </td>
 
-                <td className="p-3">
-                  <button
-  onClick={() => navigate(`/admin/orders/${order.id}`)}
-  className="text-blue-600"
->
-  View
-</button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+          {/* Payment Status */}
+          <td className="p-3">
+            <span
+              className={`px-2 py-1 rounded text-sm ${
+                order.payment_status?.toLowerCase() === "paid"
+                  ? "bg-green-100 text-green-700"
+                  : order.payment_status?.toLowerCase() === "failed"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
+              {order.payment_status || "Pending"}
+            </span>
+          </td>
+
+          {/* Delivery Slot */}
+          <td className="p-3">
+            {order.delivery_slot || "-"}
+          </td>
+
+          {/* Delivery Partner */}
+          <td className="p-3">
+            {order.delivery_partner || "Not Assigned"}
+          </td>
+
+          {/* Order Status */}
+          <td className="p-3">
+            <span
+              className={`px-2 py-1 rounded text-sm ${
+                order.order_status === "DELIVERED"
+                  ? "bg-green-100 text-green-700"
+                  : order.order_status === "PLACED" ||
+                    order.order_status === "CONFIRMED"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {order.order_status || "PLACED"}
+            </span>
+          </td>
+
+          {/* Actions */}
+          <td className="p-3">
+            <button
+              onClick={() => navigate(`/admin/orders/${order.id}`)}
+              className="text-blue-600 hover:underline"
+            >
+              View
+            </button>
+          </td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table>
     </div>
   );
 }

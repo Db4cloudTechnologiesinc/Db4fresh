@@ -26,6 +26,7 @@ import invoiceRoutes from "./routes/invoiceRoutes.js";
 import reorderRoutes from "./routes/reorderRoutes.js";
 import cancelOrderRoutes from "./routes/cancelOrderRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+
 import walletRoutes from "./routes/walletRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
@@ -88,6 +89,7 @@ app.use("/api/invoice", invoiceRoutes);
 app.use("/api/reorder", reorderRoutes);
 app.use("/api/cancel-order", cancelOrderRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/users",userRoutes); // Admin user management
 app.use("/api/users", userRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/support", supportRoutes);

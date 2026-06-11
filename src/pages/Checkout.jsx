@@ -83,7 +83,6 @@ export default function Checkout() {
         pincode: finalAddress.pincode || "",
         phone: finalAddress.phone || "",
       };
-
       const payload = {
         items,
         totalAmount: subtotal,

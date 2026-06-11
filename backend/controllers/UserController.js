@@ -20,6 +20,29 @@ export const getProfile = (req, res) => {
     }
   );
 };
+export const getAllUsers = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        id,
+        name,
+        email,
+        phone,
+        created_at
+      FROM users
+      ORDER BY id DESC
+    `);
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Get Users Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 /* =========================
    UPDATE USER PROFILE

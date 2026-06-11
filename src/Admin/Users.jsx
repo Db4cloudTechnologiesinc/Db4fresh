@@ -132,12 +132,12 @@ if (Array.isArray(data)) {
            {Array.isArray(users) &&
   users.map((user) => (
               <tr
-                key={user.id}
-                className="hover:bg-gray-50 cursor-pointer"
-                onClick={() =>
-                  navigate(`/admin/users/${user.id}`)
-                }
-              >
+  key={user.id}
+  className="hover:bg-gray-100 cursor-pointer"
+  onClick={() =>
+    navigate(`/admin/users/${user.id}`)
+  }
+>
                 <td className="border p-2">{user.id}</td>
                 <td className="border p-2">{user.name}</td>
                 <td className="border p-2">{user.email}</td>

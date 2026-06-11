@@ -6,6 +6,8 @@ import {
   deleteAccount,
   searchUsers,
   getAllUsers,
+  getUserById,
+  getUserDetails
 } from "../controllers/UserController.js";
 
 const router = express.Router();
@@ -17,5 +19,7 @@ router.put("/profile", requireAuth, updateProfile);
 router.delete("/delete", requireAuth, deleteAccount);
 
 router.get("/search/:query", requireAuth, searchUsers);
+router.get("/:id", requireAuth, getUserById);
+router.get("/details/:id",requireAuth,getUserDetails);
 
 export default router;

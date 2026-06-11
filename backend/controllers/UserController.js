@@ -43,6 +43,26 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+export const searchUsers = async (req, res) => {
+  try {
+    const { query } = req.params;
+
+    const [rows] = await db.query(
+      `
+      SELECT id, name, email
+      FROM users
+      WHERE name LIKE ?
+         OR CAST(id AS CHAR) LIKE ?
+      `,
+      [`%${query}%`, `%${query}%`]
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 /* =========================
    UPDATE USER PROFILE
@@ -59,6 +79,111 @@ export const updateProfile = (req, res) => {
       res.json({ message: "Profile updated successfully" });
     }
   );
+};
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        id,
+        name,
+        email,
+        phone,
+        created_at
+      FROM users
+      WHERE id = ?
+      `,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    res.json(rows[0]);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const getUserDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // User
+    const [users] = await db.query(
+      `
+      SELECT id, name, email, phone, created_at
+      FROM users
+      WHERE id = ?
+      `,
+      [id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Orders
+    const [orders] = await db.query(
+      `
+      SELECT *
+      FROM orders
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      `,
+      [id]
+    );
+
+    // Addresses
+    const [addresses] = await db.query(
+      `
+      SELECT *
+      FROM user_addresses
+      WHERE user_id = ?
+      `,
+      [id]
+    );
+
+    const totalOrders = orders.length;
+
+    const totalSpent = orders.reduce(
+      (sum, order) => sum + Number(order.total_amount || 0),
+      0
+    );
+
+    const lastOrderDate =
+      orders.length > 0
+        ? orders[0].created_at
+        : null;
+
+    res.json({
+      user: users[0],
+      stats: {
+        totalOrders,
+        totalSpent,
+        lastOrderDate,
+      },
+      addresses,
+      orders,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 };
 /* =========================
    DELETE USER ACCOUNT
@@ -104,29 +229,29 @@ export const deactivateAccount = (req, res) => {
     }
   );
 };
-export const searchUsers = (req, res) => {
-  const { query } = req.params;
+// export const searchUsers = (req, res) => {
+//   const { query } = req.params;
 
-  db.query(
-    `
-    SELECT id, name, email
-    FROM users
-    WHERE
-      name LIKE ?
-      OR CAST(id AS CHAR) LIKE ?
-    LIMIT 10
-    `,
-    [`%${query}%`, `%${query}%`],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({
-          message: "Failed to search users",
-        });
-      }
+//   db.query(
+//     `
+//     SELECT id, name, email
+//     FROM users
+//     WHERE
+//       name LIKE ?
+//       OR CAST(id AS CHAR) LIKE ?
+//     LIMIT 10
+//     `,
+//     [`%${query}%`, `%${query}%`],
+//     (err, rows) => {
+//       if (err) {
+//         console.error(err);
+//         return res.status(500).json({
+//           message: "Failed to search users",
+//         });
+//       }
 
-      res.json(rows);
-    }
-  );
-};
-//export { getProfile, updateProfile , deleteAccount };
+//       res.json(rows);
+//     }
+//   );
+// };
+// //export { getProfile, updateProfile , deleteAccount };

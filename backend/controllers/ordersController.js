@@ -3,42 +3,6 @@
 import db from "../config/db.js";
 import { sendMessage } from "../kafka/producer.js";
 
-/* CREATE ORDER */
-// export const createOrder = async (req, res) => {
-//   try {
-//     const { items, totalAmount } = req.body;
-//     const userId = req.user?.id;
-
-//     if (!userId) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     // ✅ Save order in DB
-//     const [result] = await db.query(
-//       "INSERT INTO orders (user_id, total_amount) VALUES (?, ?)",
-//       [userId, totalAmount]
-//     );
-
-//     const orderId = result.insertId;
-
-//     // 🔥 SEND TO KAFKA (ADMIN NOTIFICATION)
-//     await sendMessage("order-topic", {
-//       type: "NEW_ORDER",
-//       orderId,
-//       userId,
-//       totalAmount,
-//       items,
-//       createdAt: new Date(),
-//     });
-
-//     console.log("📦 Order created & sent to Kafka:", orderId);
-
-//     res.json({ success: true, orderId });
-//   } catch (err) {
-//     console.error("❌ Order Error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 export const createOrder = async (req, res) => {
   try {
     const {
@@ -57,6 +21,10 @@ export const createOrder = async (req, res) => {
       });
     }
 
+    const slot = deliverySlot
+  ? `${deliverySlot.date} - ${deliverySlot.time}`
+  : null;
+
     // Create order
    const [result] = await db.query(
   `
@@ -67,21 +35,22 @@ export const createOrder = async (req, res) => {
     payment_status,
     delivery_slot,
     address,
-    items
+    items,
+    order_status
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `,
   [
     userId,
     totalAmount,
     paymentMethod,
-    "Pending", // payment_status
-    deliverySlot,
+    "pending",
+    slot,
     JSON.stringify(address),
     JSON.stringify(items),
+    "PLACED",
   ]
 );
-
     const orderId = result.insertId;
 
     // Save order items
@@ -112,12 +81,10 @@ export const createOrder = async (req, res) => {
     }
 
     await sendMessage("order-topic", {
-      type: "NEW_ORDER",
-      orderId,
-      userId,
-      totalAmount,
-    });
-
+  orderId,
+  userId,
+  totalAmount,
+});
     res.json({
       success: true,
       orderId,
@@ -146,31 +113,6 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-/* GET ALL ORDERS (ADMIN) */
-// export const getOrders = async (_req, res) => {
-//   try {
-//     const [rows] = await db.query(`
-//       SELECT
-//         id,
-//         user_id,
-//         total_amount,
-//         payment_method,
-//         payment_status,
-//         delivery_slot,
-//         delivery_partner,
-//         order_status,
-//         created_at
-//       FROM orders
-//       ORDER BY id DESC
-//     `);
-
-//     res.json(rows);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json([]);
-//   }
-// };
-// 
 export const getOrders = async (_req, res) => {
   try {
     const [rows] = await db.query(`
@@ -181,7 +123,7 @@ export const getOrders = async (_req, res) => {
         payment_method,
         payment_status,
         delivery_slot,
-        delivery_partner,
+        delivery_partner_name,
         order_status,
         created_at
       FROM orders
@@ -200,52 +142,6 @@ export const getOrders = async (_req, res) => {
 };
 
 
-
-
-/* GET ORDER BY ID */
-// export const getOrderById = async (req, res) => {
-//   try {
-//     const orderId = req.params.id;
-
-//     // Order
-//     const [orders] = await db.query(
-//       "SELECT * FROM orders WHERE id = ?",
-//       [orderId]
-//     );
-
-//     if (!orders.length) {
-//       return res.status(404).json({
-//         message: "Order not found",
-//       });
-//     }
-
-//     // Order Items
-//     const [items] = await db.query(
-//       `
-//       SELECT
-//         oi.*,
-//         p.name,
-//         p.image
-//       FROM order_items oi
-//       LEFT JOIN products p
-//       ON oi.product_id = p.id
-//       WHERE oi.order_id = ?
-//       `,
-//       [orderId]
-//     );
-
-//     res.json({
-//       order: orders[0],
-//       items,
-//     });
-//   } catch (err) {
-//     console.error(err);
-
-//     res.status(500).json({
-//       message: "Failed to fetch order",
-//     });
-//   }
-// };
 export const getOrderById = async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -304,6 +200,27 @@ export const getOrderById = async (req, res) => {
     });
   }
 };
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    await db.query(
+      "UPDATE orders SET order_status=? WHERE id=?",
+      [status, req.params.id]
+    );
+
+    res.json({
+      success: true,
+      message: "Status updated successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
 /* MARK DELIVERED */
 export const markOrderDelivered = async (req, res) => {
   try {
@@ -315,5 +232,95 @@ export const markOrderDelivered = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+export const getOrderTimeline = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      `
+      SELECT *
+      FROM order_status_history
+      WHERE order_id = ?
+      ORDER BY created_at ASC
+      `,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      timeline: rows,
+    });
+  } catch (err) {
+    console.error("TIMELINE ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+export const assignPartner = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { partnerId } = req.body;
+
+    const [partner] = await db.query(
+      `
+      SELECT name
+      FROM delivery_partners
+      WHERE id = ?
+      `,
+      [partnerId]
+    );
+
+    if (!partner.length) {
+      return res.status(404).json({
+        message: "Partner not found",
+      });
+    }
+
+    await db.query(
+      `
+      UPDATE orders
+      SET
+        delivery_partner_id = ?,
+        delivery_partner_name = ?
+      WHERE id = ?
+      `,
+      [partnerId, partner[0].name, id]
+    );
+
+    res.json({
+      success: true,
+      message: "Partner assigned successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to assign partner",
+    });
+  }
+};
+export const getDeliveryPartners = async (req, res) => {
+  try {
+    const [partners] = await db.query(`
+      SELECT id, name
+      FROM delivery_partners
+      WHERE is_active = 1
+    `);
+
+    res.json({
+      success: true,
+      partners,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch delivery partners",
+    });
   }
 };

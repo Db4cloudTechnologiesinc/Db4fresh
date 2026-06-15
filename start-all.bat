@@ -36,6 +36,6 @@ echo.
 echo 🟣 Starting Frontend...
 start cmd /k "cd /d %cd% && npm run dev"
 
-echo.
-echo ✅ All services started!
-pause
+@REM echo.
+@REM echo ✅ All services started!
+@REM pause

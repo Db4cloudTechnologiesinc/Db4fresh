@@ -74,19 +74,36 @@ export const updatePreferences = (req, res) => {
 
 /* GET NOTIFICATIONS */
 export const getNotifications = (req, res) => {
-  const userId = req.user.id;
-
   db.query(
     `
-    SELECT * FROM notifications
-    WHERE user_id = ?
+    SELECT *
+    FROM notifications
+    WHERE is_read = 0
     ORDER BY created_at DESC
-    LIMIT 20
     `,
-    [userId],
     (err, rows) => {
       if (err) return res.status(500).json(err);
+
       res.json(rows);
     }
   );
+};
+export const markNotificationsRead = async (req, res) => {
+  try {
+    await db.query(`
+      UPDATE notifications
+      SET is_read = 1
+      WHERE is_read = 0
+    `);
+
+    res.json({
+      success: true,
+      message: "Notifications marked as read",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };

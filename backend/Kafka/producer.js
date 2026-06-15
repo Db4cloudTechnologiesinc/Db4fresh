@@ -84,13 +84,8 @@ export const sendMessage = async (topic, message) => {
       topic: topic,
       messages: [
         {
-          value: JSON.stringify({
-            orderId: message.orderId,
-            userName: message.userName,
-            products: message.products,
-            totalAmount: message.totalAmount,
-          }),
-        },
+          value: JSON.stringify(message)
+          },
       ],
     });
 

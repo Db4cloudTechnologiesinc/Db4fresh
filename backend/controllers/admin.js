@@ -230,3 +230,39 @@ export const getRevenueDetails = async (req, res) => {
     res.status(500).json([]);
   }
 };
+export const getAdminNotifications = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT *
+      FROM notifications
+      ORDER BY created_at DESC
+      LIMIT 20
+    `);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("NOTIFICATION ERROR:", err);
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+export const markNotificationsRead = async (req, res) => {
+  try {
+    await db.query(`
+      UPDATE notifications
+      SET is_read = TRUE
+      WHERE is_read = FALSE
+    `);
+
+    res.json({
+      success: true,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};

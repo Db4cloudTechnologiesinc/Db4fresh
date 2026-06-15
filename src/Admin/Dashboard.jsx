@@ -14,46 +14,109 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState([]);
   const [showBox, setShowBox] = useState(false);
   const [loading, setLoading] = useState(true);
+  const unreadCount = notifications.filter(
+  (n) => !n.is_read
+).length;
+const handleBellClick = async () => {
+  setShowBox(!showBox);
 
-  useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-
-    if (!token) {
-      navigate("/admin/login");
-      return;
-    }
-
-    const loadStats = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:4000/api/admin/dashboard", // ✅ FIXED URL
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await res.json();
-
-        console.log("📊 Dashboard stats:", data);
-
-        setStats({
-          products: Number(data.products) || 0,
-          orders: Number(data.orders) || 0,
-          users: Number(data.users) || 0,
-          revenue: Number(data.revenue) || 0,
-        });
-
-      } catch (error) {
-        console.error("❌ Dashboard error:", error);
-      } finally {
-        setLoading(false);
+  try {
+    await fetch(
+      "http://localhost:4000/api/admin/notifications/read",
+      {
+        method: "PUT",
       }
-    };
+    );
 
-    loadStats();
-  }, [navigate]);
+    setNotifications((prev) =>
+      prev.map((n) => ({
+        ...n,
+        is_read: true,
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const loadNotifications = async () => {
+  try {
+    const res = await fetch(
+      "http://localhost:4000/api/admin/notifications"
+    );
+
+    const data = await res.json();
+
+    console.log("🔔 Notifications:", data);
+
+    setNotifications(data);
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+};
+
+// const handleBellClick = async () => {
+//   setShowBox(!showBox);
+
+//   try {
+//     await fetch(
+//       "http://localhost:4000/api/admin/notifications/read",
+//       {
+//         method: "PUT",
+//       }
+//     );
+
+//     // Clear notifications immediately
+//     setNotifications([]);
+//   } catch (err) {
+//     console.error(err);
+//   }
+// };
+
+ useEffect(() => {
+  const token = localStorage.getItem("adminToken");
+
+  if (!token) {
+    navigate("/admin/login");
+    return;
+  }
+
+  const loadStats = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:4000/api/admin/dashboard",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      setStats({
+        products: Number(data.products) || 0,
+        orders: Number(data.orders) || 0,
+        users: Number(data.users) || 0,
+        revenue: Number(data.revenue) || 0,
+      });
+    } catch (error) {
+      console.error("Dashboard error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadStats();
+  loadNotifications();
+
+  const interval = setInterval(() => {
+    loadNotifications();
+  }, 5000);
+
+  return () => clearInterval(interval);
+
+}, [navigate]);
 
   if (loading) {
     return <div className="p-6 text-gray-600">Loading dashboard...</div>;
@@ -61,63 +124,83 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 relative">
-      {/* 🔔 NOTIFICATION ICON */}
-      <div className="fixed top-6 right-6 z-50">
-        <button
-          onClick={() => setShowBox(!showBox)}
-          className="relative text-xl bg-white p-2 rounded-full shadow"
-        >
-          🔔
-          {notifications.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-              {notifications.length}
-            </span>
-          )}
-        </button>
+     {/* 🔔 NOTIFICATION ICON */}
+<div className="fixed top-6 right-6 z-50">
+  <button
+    onClick={handleBellClick}
+    className="relative text-xl bg-white p-2 rounded-full shadow"
+  >
+    🔔
 
-        {/* 🔔 DROPDOWN */}
-        {showBox && (
-          <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white shadow-xl rounded-lg p-3">
-            <h4 className="font-semibold mb-2">Notifications</h4>
+    {unreadCount > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
+        {unreadCount}
+      </span>
+    )}
+  </button>
 
-            {notifications.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                No notifications
+  {/* DROPDOWN */}
+  {showBox && (
+    <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto bg-white shadow-xl rounded-lg p-3">
+      <h4 className="font-semibold mb-2">
+        Notifications
+      </h4>
+
+      {notifications.length === 0 ? (
+        <p className="text-gray-500 text-sm">
+          No notifications
+        </p>
+      ) : (
+        notifications.map((n, i) => {
+          let details = {};
+
+          try {
+            details =
+              typeof n.message === "string"
+                ? JSON.parse(n.message)
+                : n.message;
+          } catch {
+            details = {};
+          }
+
+          return (
+            <div
+              key={i}
+              onClick={() => {
+                if (details.orderId) {
+                  navigate(
+                    `/admin/orders/${details.orderId}`
+                  );
+                }
+              }}
+              className="border-b py-3 text-sm cursor-pointer hover:bg-gray-100 rounded"
+            >
+              <p className="font-semibold">
+                🛒 Order #{details.orderId || "N/A"}
               </p>
-            ) : (
-              notifications.map((n, i) => (
-                <div key={i} className="border-b py-2 text-sm">
-                  {/* Order Info */}
-                  <p className="font-semibold">
-                    🛒 Order #{n.orderId || "N/A"}
-                  </p>
 
-                  <p>👤 {n.user || "Customer"}</p>
+              <p>
+                👤 User #{details.userId || "N/A"}
+              </p>
 
-                  <p>💰 ₹{n.total || 0}</p>
+              <p>
+                💰 ₹{details.totalAmount || 0}
+              </p>
 
-                  {/* Products */}
-                  {n.products?.length > 0 && (
-                    <ul className="text-xs text-gray-600 mt-1">
-                      {n.products.map((p, idx) => (
-                        <li key={idx}>
-                          • {p.name} × {p.qty}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              <p>
+                💳 {details.paymentMethod || "-"}
+              </p>
 
-                  {/* Time */}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {n.time}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
+              <p className="text-xs text-gray-400 mt-1">
+                {n.created_at}
+              </p>
+            </div>
+          );
+        })
+      )}
+    </div>
+  )}
+</div>
       {/* DASHBOARD CONTENT */}
       <h2 className="text-2xl font-semibold mb-6">
         Dashboard Overview

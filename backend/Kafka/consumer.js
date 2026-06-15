@@ -1,75 +1,76 @@
-lihi/loytfi7
 import kafka from "../config/kafka.js";
 import pool from "../config/db.js";
 
-const consumer = kafka.consumer({ groupId: "order-group" });
+const consumer = kafka.consumer({
+  groupId: "order-group",
+});
 
 const startConsumer = async () => {
-  await consumer.connect();
+  try {
+    await consumer.connect();
 
-  await consumer.subscribe({
-    topic: "order-topic",
-    fromBeginning: true,
-  });
+    console.log("✅ Kafka Consumer Connected");
 
-  await consumer.run({
-    eachMessage: async ({ message }) => {
-      const connection = await pool.getConnection();
+    await consumer.subscribe({
+      topic: "order-topic",
+      fromBeginning: false,
+    });
 
-      try {
-        const order = JSON.parse(message.value.toString());
+    console.log("✅ Subscribed to order-topic");
 
-        console.log("✅ Received Order:", order);
+    await consumer.run({
+      eachMessage: async ({ message }) => {
+        const connection = await pool.getConnection();
 
-        await connection.beginTransaction();
-
-        // ✅ INSERT INTO ORDERS TABLE
-        const [orderResult] = await connection.query(
-          `INSERT INTO orders
-          (user_id, total_amount, payment_method,
-           payment_status, order_status, address)
-          VALUES (?, ?, ?, ?, 'PLACED', ?)`,
-          [
-            order.userId,
-            order.totalAmount,
-            order.paymentMethod,
-            order.paymentStatus,
-            order.address,
-          ]
-        );
-
-        const orderId = orderResult.insertId;
-
-        // ✅ INSERT INTO ORDER_ITEMS
-        for (const item of order.items) {
-          await connection.query(
-            `INSERT INTO order_items
-            (order_id, product_id, quantity, price,
-             product_name, product_image)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              orderId,
-              item.productId,
-              item.quantity,
-              item.price,
-              item.product_name,
-              item.product_image,
-            ]
+        try {
+          const order = JSON.parse(
+            message.value.toString()
           );
+
+          console.log(
+            "📩 Received Order:",
+            order
+          );
+
+         await connection.query(
+  `
+  INSERT INTO notifications
+  (user_id, title, message, is_read)
+  VALUES (?, ?, ?, 0)
+  `,
+  [
+    1,
+    "New Order",
+    JSON.stringify({
+      orderId: order.orderId,
+      userId: order.userId,
+      totalAmount: order.totalAmount,
+      paymentMethod: order.paymentMethod,
+      address: order.address,
+    }),
+  ]
+);
+          console.log(
+            "✅ Notification Created"
+          );
+
+        } catch (err) {
+          console.error(
+            "❌ Notification Error:",
+            err.message
+          );
+        } finally {
+          connection.release();
         }
+      },
+    });
 
-        await connection.commit();
-
-        console.log("✅ Order + Items saved successfully");
-
-      } catch (err) {
-        await connection.rollback();
-        console.error("❌ Error processing order:", err.message);
-      } finally {
-        connection.release();
-      }
-    },
-  });
+  } catch (err) {
+    console.error(
+      "❌ Consumer Startup Error:",
+      err.message
+    );
+  }
 };
 
 export default startConsumer;

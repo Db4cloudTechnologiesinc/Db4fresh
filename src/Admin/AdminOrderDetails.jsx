@@ -1,43 +1,4 @@
-// import { useParams, useNavigate } from "react-router-dom";
-// import { useEffect, useState } from "react";
 
-// export default function OrderDetails() {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const [order, setOrder] = useState(null);
-
-//   useEffect(() => {
-//     fetch(`http://localhost:4000/api/orders/${id}`)
-//       .then(res => res.json())
-//       .then(data => setOrder(data))
-//       .catch(err => console.error(err));
-//   }, [id]);
-
-//   if (!order) return <p>Loading order...</p>;
-
-//   return (
-//     <div className="bg-white p-6 rounded shadow">
-//       <button
-//         onClick={() => navigate(-1)}
-//         className="text-sm text-blue-600 mb-4"
-//       >
-//         ← Back
-//       </button>
-
-//       <h2 className="text-xl font-semibold mb-4">
-//         Order #{String(order.id).padStart(4, "0")}
-//       </h2>
-
-//       <div className="space-y-2">
-//         <p><b>User:</b> {order.user_name}</p>
-//         <p><b>Amount:</b> ₹{order.total_amount}</p>
-//         <p><b>Status:</b> {order.order_status}</p>
-//         <p><b>Payment:</b> {order.payment_method || "COD"}</p>
-//         <p><b>Date:</b> {new Date(order.created_at).toLocaleString()}</p>
-//       </div>
-//     </div>
-//   );
-// }
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -45,27 +6,105 @@ export default function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+const [partners, setPartners] = useState([]);
+const [selectedPartner, setSelectedPartner] = useState("");
+  const updateStatus = async () => {
+  try {
+    const res = await fetch(
+      `http://localhost:4000/api/orders/${id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          status: order.order_status,
+        }),
+      }
+    );
 
-  // useEffect(() => {
-  //   fetch(`http://localhost:4000/api/orders/${id}`)
-  //     .then(res => res.json())
-  //     .then(data => setOrder(data))
-  //     .catch(err => console.error(err));
-  // }, [id]);
+    const data = await res.json();
+
+    alert(data.message || "Status updated");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update status");
+  }
+};
+
+const assignPartner = async () => {
+  try {
+    const res = await fetch(
+      `http://localhost:4000/api/orders/${id}/assign-partner`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          partnerId: selectedPartner,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    alert(data.message);
+
+    const partner = partners.find(
+      (p) => p.id === Number(selectedPartner)
+    );
+
+    if (partner) {
+      setOrder((prev) => ({
+        ...prev,
+        delivery_partner_name: partner.name,
+      }));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Failed to assign partner");
+  }
+};
   useEffect(() => {
+  // Order Details
   fetch(`http://localhost:4000/api/orders/${id}`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`
-    }
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
   })
-    .then(res => res.json())
-    .then(data => {
-      console.log("ORDER DETAILS:", data);
-      setOrder(data);
+    .then((res) => res.json())
+    .then((data) => {
+      setOrder({
+        ...data.order,
+        items: data.items,
+      });
     })
-    .catch(err => console.error(err));
-}, [id]);
+    .catch(console.error);
 
+  // Timeline
+  fetch(`http://localhost:4000/api/orders/${id}/timeline`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => setTimeline(data.timeline || []))
+    .catch(console.error);
+
+  // Delivery Partners
+  fetch(`http://localhost:4000/api/orders/${id}/delivery-partners`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => setPartners(data.partners || []))
+    .catch(console.error);
+}, [id]);
   if (!order) return <p className="p-6">Loading order...</p>;
 
   return (
@@ -106,7 +145,7 @@ export default function OrderDetails() {
                 />
 
                 <div className="flex-1">
-                  <p className="font-medium">{item.product_name}</p>
+                  <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-gray-500">₹{item.price}</p>
                 </div>
 
@@ -128,13 +167,119 @@ export default function OrderDetails() {
         </div>
 
         {/* CUSTOMER */}
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h3 className="font-semibold mb-2">Customer Details</h3>
-          <p><b>Name:</b> {order.user_name}</p>
-          <p><b>Phone:</b> {order.phone || "N/A"}</p>
-          <p><b>Address:</b> {order.address || "N/A"}</p>
-        </div>
+      <div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-4">
+    Customer Information
+  </h3>
 
+  <div className="space-y-2">
+    <p>
+      <b>User ID:</b> {order.user_id}
+    </p>
+
+    <p>
+      <b>Name:</b> {order.name || "N/A"}
+    </p>
+
+    <p>
+      <b>Phone:</b> {order.phone || "N/A"}
+    </p>
+  </div>
+</div>
+{/* <div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-4">
+    Delivery Information
+  </h3>
+  <div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-4">
+    Order Timeline
+  </h3>
+
+  <div className="space-y-4">
+    {timeline.length > 0 ? (
+      timeline.map((item, index) => (
+        <div key={index} className="flex gap-3">
+          <div className="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
+
+          <div>
+            <p className="font-medium">
+              {item.status}
+            </p>
+
+            <p className="text-sm text-gray-500">
+              {new Date(
+                item.created_at
+              ).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500">
+        No timeline available
+      </p>
+    )}
+  </div>
+</div> */}
+{/* Delivery Information */}
+<div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-4">
+    Delivery Information
+  </h3>
+
+  <p>
+    <b>Slot:</b>{" "}
+    {order.delivery_slot || "Not Assigned"}
+  </p>
+
+  <p>
+    <b>Partner:</b>{" "}
+    {order.delivery_partner_name || "Not Assigned"}
+  </p>
+</div>
+
+{/* Order Timeline */}
+<div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-4">
+    Order Timeline
+  </h3>
+
+  <div className="space-y-4">
+    {timeline.length > 0 ? (
+      timeline.map((item, index) => (
+        <div key={index} className="flex gap-3">
+          <div className="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
+
+          <div>
+            <p className="font-medium">
+              {item.status}
+            </p>
+
+            <p className="text-sm text-gray-500">
+              {new Date(item.created_at).toLocaleString()}
+            </p>
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500">
+        No timeline available
+      </p>
+    )}
+  </div>
+
+
+  <p>
+    <b>Slot:</b>{" "}
+    {order.delivery_slot || "Not Assigned"}
+  </p>
+
+  <p>
+    <b>Partner:</b>{" "}
+    {order.delivery_partner_name ||
+      "Not Assigned"}
+  </p>
+</div>
       </div>
 
       {/* RIGHT SIDE */}
@@ -143,13 +288,79 @@ export default function OrderDetails() {
         {/* SUMMARY */}
         <div className="bg-white p-6 rounded-xl shadow">
           <h3 className="font-semibold mb-2">Order Summary</h3>
-          <p>Subtotal: ₹{order.total_amount}</p>
-          <p className="text-green-600">Delivery: FREE</p>
+          <div className="space-y-2">
+  <div className="flex justify-between">
+    <span>Subtotal</span>
+    <span>₹{order.total_amount}</span>
+  </div>
 
-          <h2 className="text-xl font-bold text-red-600 mt-2">
-            ₹{order.total_amount}
-          </h2>
+  <div className="flex justify-between text-green-600">
+    <span>Delivery</span>
+    <span>FREE</span>
+  </div>
+
+  <hr />
+
+  <div className="flex justify-between font-bold text-lg">
+    <span>Total</span>
+    <span>₹{order.total_amount}</span>
+  </div>
+</div>
+
         </div>
+        <div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-3">
+    Payment Details
+  </h3>
+
+  <p>
+    <b>Method:</b>{" "}
+    {order.payment_method}
+  </p>
+
+  <p>
+    <b>Status:</b>{" "}
+    {order.payment_status}
+  </p>
+
+  <p>
+    <b>Payment ID:</b>{" "}
+    {order.payment_id || "N/A"}
+  </p>
+</div>
+<div className="bg-white p-6 rounded-xl shadow">
+  <h3 className="font-semibold mb-3">
+    Assign Delivery Partner
+  </h3>
+
+  <select
+    value={selectedPartner}
+    onChange={(e) =>
+      setSelectedPartner(e.target.value)
+    }
+    className="w-full border p-2 rounded"
+  >
+    <option value="">
+      Select Partner
+    </option>
+
+    {partners.map((partner) => (
+      <option
+        key={partner.id}
+        value={partner.id}
+      >
+        {partner.name}
+      </option>
+    ))}
+  </select>
+
+  <button
+    onClick={assignPartner}
+    className="w-full bg-blue-500 text-white py-2 rounded mt-3"
+  >
+    Assign Partner
+  </button>
+</div>
 
         {/* STATUS UPDATE */}
         <div className="bg-white p-6 rounded-xl shadow">
@@ -165,14 +376,19 @@ export default function OrderDetails() {
             <option>PLACED</option>
             <option>CONFIRMED</option>
             <option>PACKED</option>
+            <option>OUT_FOR_DELIVERY</option>
             <option>DELIVERED</option>
             <option>CANCELLED</option>
           </select>
 
-          <button className="w-full bg-red-500 text-white py-2 rounded mt-3">
-            Update Status
-          </button>
+         <button
+  onClick={updateStatus}
+  className="w-full bg-red-500 text-white py-2 rounded mt-3"
+>
+  Update Status
+</button>
         </div>
+
 
         {/* BACK BUTTON */}
         <button

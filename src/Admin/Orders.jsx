@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
 const TABS = [
   { label: "All Orders", value: "all" },
   { label: "PLACED", value: "PLACED" },
@@ -13,6 +14,9 @@ const TABS = [
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
+  
+const [search, setSearch] = useState("");
+const [sortOrder, setSortOrder] = useState("newest");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,14 +33,78 @@ export default function Orders() {
   }, []);
 
   /* ================= FILTER ================= */
-  const filteredOrders =
+  const filteredOrders = orders
+  .filter((o) =>
     activeTab === "all"
-      ? orders
-      : orders.filter((o) => o.order_status === activeTab);
-
+      ? true
+      : o.order_status === activeTab
+  )
+  .filter(
+    (o) =>
+      String(o.id).includes(search) ||
+      String(o.user_id).includes(search)
+  )
+  .sort((a, b) =>
+    sortOrder === "newest"
+      ? new Date(b.created_at) - new Date(a.created_at)
+      : new Date(a.created_at) - new Date(b.created_at)
+  );
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Orders</h2>
+      <div className="flex justify-between items-center gap-4">
+  <input
+    type="text"
+    placeholder="Search Order ID or User ID..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="border rounded-lg px-3 py-2 w-80"
+  />
+
+  <select
+    value={sortOrder}
+    onChange={(e) => setSortOrder(e.target.value)}
+    className="border rounded-lg px-3 py-2"
+  >
+    <option value="newest">Newest First</option>
+    <option value="oldest">Oldest First</option>
+  </select>
+</div>
+<div className="grid grid-cols-4 gap-4">
+  <div className="bg-white p-4 rounded-lg shadow">
+    <p className="text-gray-500">Total Orders</p>
+    <h3 className="text-2xl font-bold">
+      {orders.length}
+    </h3>
+  </div>
+
+  <div className="bg-yellow-50 p-4 rounded-lg shadow">
+    <p className="text-gray-500">Placed</p>
+    <h3 className="text-2xl font-bold">
+      {orders.filter(
+        (o) => o.order_status === "PLACED"
+      ).length}
+    </h3>
+  </div>
+
+  <div className="bg-green-50 p-4 rounded-lg shadow">
+    <p className="text-gray-500">Delivered</p>
+    <h3 className="text-2xl font-bold">
+      {orders.filter(
+        (o) => o.order_status === "DELIVERED"
+      ).length}
+    </h3>
+  </div>
+
+  <div className="bg-red-50 p-4 rounded-lg shadow">
+    <p className="text-gray-500">Cancelled</p>
+    <h3 className="text-2xl font-bold">
+      {orders.filter(
+        (o) => o.order_status === "CANCELLED"
+      ).length}
+    </h3>
+  </div>
+</div>
 
       {/* ===== STATUS TABS ===== */}
       <div className="flex gap-3 border-b pb-2">
@@ -129,7 +197,7 @@ export default function Orders() {
 
           {/* Delivery Partner */}
           <td className="p-3">
-            {order.delivery_partner || "Not Assigned"}
+            {order.delivery_partner_name || "Not Assigned"}
           </td>
 
           {/* Order Status */}

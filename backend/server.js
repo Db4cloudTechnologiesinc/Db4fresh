@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import startConsumer from "./kafka/consumer.js";
  
 /* ================= FIX __dirname FOR ES MODULE ================= */
 const __filename = fileURLToPath(import.meta.url);
@@ -117,6 +118,7 @@ app.get("/", (req, res) => {
  
 /* ================= ERROR HANDLER ================= */
 app.use(errorHandler);
+startConsumer();
  
 /* ================= SERVER START ================= */
 const PORT = process.env.PORT || 4000;

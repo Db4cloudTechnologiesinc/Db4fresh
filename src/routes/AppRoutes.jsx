@@ -31,6 +31,7 @@ import BannerPage from "../pages/BannerPage";
 import SearchPage from "../pages/SearchPage";
 
 /* ================= ADMIN ================= */
+
 import AdminLogin from "../Admin/AdminLogin";
 import ProtectedAdmin from "../Admin/ProtectedAdmin";
 import AdminLayout from "../Admin/AdminLayout";
@@ -50,7 +51,7 @@ import CategoriesAdmin from "../Admin/Categories";
 import AdminSubcategories from "../Admin/AdminSubCategories";
 import AdminPriceUpdate from "../Admin/AdminPriceUpdate";
 import BulkPriceUpdate from "../Admin/BulkPriceUpdate";
-
+import Offers from "../Admin/Offers";
 
 import DeliveryApp from "../db4fresh_delivery/DeliveryApp";
 
@@ -97,6 +98,7 @@ export default function AppRoutes() {
           <Route index element={<Navigate to="dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="offers" element={<Offers />} />
           <Route path="orders/:id" element={<AdminOrderDetails />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />
@@ -106,6 +108,7 @@ export default function AppRoutes() {
           <Route path="products/update/:id" element={<UpdateProduct />} />
           <Route path="products/update-price" element={<AdminPriceUpdate />} />
           <Route path="/admin/products/bulk-update" element={<BulkPriceUpdate />} />
+          
           <Route path="categories" element={<CategoriesAdmin />} />
           <Route path="subcategories" element={<AdminSubcategories />} />
           <Route path="add-admin" element={<AddAdmin />} />

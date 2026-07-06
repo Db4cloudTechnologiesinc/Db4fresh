@@ -20,7 +20,7 @@ const cartSlice = createSlice({
       price: i.price,
       image: i.image,
       qty: i.qty,
-      variantId: i.variantId || "default",
+      variantId: i.variantId || null,
       variantLabel: i.variantLabel || "",
     }));
 
@@ -34,8 +34,8 @@ const cartSlice = createSlice({
     const existing = state.items.find(
       (i) =>
         String(i.productId) === String(item.productId) &&
-        String(i.variantId ?? "default") ===
-          String(item.variantId ?? "default")
+        Number(i.variantId || 0) ===
+Number(item.variantId || 0)
     );
 
     if (existing) {
@@ -43,7 +43,7 @@ const cartSlice = createSlice({
     } else {
       state.items.push({
         ...item,
-        variantId: item.variantId ?? "default",
+        variantId: item.variantId ?? null,
         qty: item.qty || 1,
       });
     }
@@ -56,11 +56,10 @@ const cartSlice = createSlice({
     const { productId, variantId } = action.payload;
 
     const item = state.items.find(
-      (i) =>
-        String(i.productId) === String(productId) &&
-        String(i.variantId ?? "default") ===
-          String(variantId ?? "default")
-    );
+  (i) =>
+    String(i.productId) === String(productId) &&
+    Number(i.variantId || 0) === Number(variantId || 0)
+);
 
     if (item) item.qty += 1;
 
@@ -72,11 +71,10 @@ const cartSlice = createSlice({
     const { productId, variantId } = action.payload;
 
     const item = state.items.find(
-      (i) =>
-        String(i.productId) === String(productId) &&
-        String(i.variantId ?? "default") ===
-          String(variantId ?? "default")
-    );
+  (i) =>
+    String(i.productId) === String(productId) &&
+    Number(i.variantId || 0) === Number(variantId || 0)
+);
 
     if (!item) return;
 
@@ -87,8 +85,8 @@ const cartSlice = createSlice({
         (i) =>
           !(
             String(i.productId) === String(productId) &&
-            String(i.variantId ?? "default") ===
-              String(variantId ?? "default")
+            Number(i.variantId || 0) ===
+              Number(variantId || 0)
           )
       );
     }
@@ -97,21 +95,19 @@ const cartSlice = createSlice({
   },
 
   /* ================= REMOVE ================= */
-  removeFromCart: (state, action) => {
-    const { productId, variantId } = action.payload;
+ removeFromCart: (state, action) => {
+  const { productId, variantId } = action.payload;
 
-    state.items = state.items.filter(
-      (i) =>
-        !(
-          String(i.productId) === String(productId) &&
-          String(i.variantId ?? "default") ===
-            String(variantId ?? "default")
-        )
-    );
+  state.items = state.items.filter(
+    (i) =>
+      !(
+        String(i.productId) === String(productId) &&
+        Number(i.variantId || 0) === Number(variantId || 0)
+      )
+  );
 
-    localStorage.setItem("cart", JSON.stringify(state.items));
-  },
-
+  localStorage.setItem("cart", JSON.stringify(state.items));
+},
   /* ================= CLEAR ================= */
   clearCart: (state) => {
     state.items = [];

@@ -144,18 +144,39 @@ const assignPartner = async () => {
                   className="w-14 h-14 rounded"
                 />
 
-                <div className="flex-1">
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-500">₹{item.price}</p>
-                </div>
+               <div className="flex-1">
+  <div className="flex items-center gap-2">
+    <p className="font-medium">{item.name}</p>
+
+    {item.is_free === 1 && (
+      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+        🎁 FREE
+      </span>
+    )}
+  </div>
+
+  <p className="text-sm text-gray-500">
+    {item.is_free === 1
+      ? "Promotional Item"
+      : `₹${item.price}`}
+  </p>
+</div>
 
                 <div className="bg-red-100 px-3 py-1 rounded font-semibold">
                   {item.quantity}
                 </div>
 
-                <div className="font-semibold">
-                  ₹{item.price * item.quantity}
-                </div>
+               <div
+  className={`font-semibold ${
+    item.is_free === 1
+      ? "text-green-600"
+      : ""
+  }`}
+>
+  {item.is_free === 1
+    ? "FREE"
+    : `₹${item.price * item.quantity}`}
+</div>
               </div>
             ))}
           </div>
@@ -186,41 +207,7 @@ const assignPartner = async () => {
     </p>
   </div>
 </div>
-{/* <div className="bg-white p-6 rounded-xl shadow">
-  <h3 className="font-semibold mb-4">
-    Delivery Information
-  </h3>
-  <div className="bg-white p-6 rounded-xl shadow">
-  <h3 className="font-semibold mb-4">
-    Order Timeline
-  </h3>
 
-  <div className="space-y-4">
-    {timeline.length > 0 ? (
-      timeline.map((item, index) => (
-        <div key={index} className="flex gap-3">
-          <div className="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
-
-          <div>
-            <p className="font-medium">
-              {item.status}
-            </p>
-
-            <p className="text-sm text-gray-500">
-              {new Date(
-                item.created_at
-              ).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      ))
-    ) : (
-      <p className="text-gray-500">
-        No timeline available
-      </p>
-    )}
-  </div>
-</div> */}
 {/* Delivery Information */}
 <div className="bg-white p-6 rounded-xl shadow">
   <h3 className="font-semibold mb-4">

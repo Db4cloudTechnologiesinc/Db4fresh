@@ -1,94 +1,65 @@
-// import React, { useEffect, useState } from "react";
-// import axios from "axios";
 
-// const API_BASE = "http://localhost:4000";
-
-// export default function OfferZone() {
-//   const [products, setProducts] = useState([]);
-
-//   useEffect(() => {
-//     axios
-//       .get(`${API_BASE}/api/products/offer-zone`)
-//       .then((res) => setProducts(res.data))
-//       .catch((err) => console.error(err));
-//   }, []);
-
-//   return (
-//     <div className="p-6">
-//       <h1 className="text-2xl font-bold">Offer Zone</h1>
-      
-
-//       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-//         {products.map((p) => (
-//           <div key={p.id} className="bg-white p-3 rounded shadow">
-//             <img
-//               src={p.image}
-//               className="h-[120px] w-full object-contain"
-//             />
-
-//             <p>{p.name}</p>
-
-//             <p className="text-red-500 font-bold">
-//               ₹{Math.round(p.price * 0.5)}
-//             </p>
-
-//             <p className="text-xs text-gray-500 line-through">
-//               ₹{p.price}
-//             </p>
-
-//             <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-//               Near Expiry
-//             </span>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import ProductCard from "../../components/ProductCard";
+// import ProductCard from "../../components/ProductCard";
 
 const API_BASE = "http://localhost:4000";
 
 export default function OfferZone() {
-  const [products, setProducts] = useState([]);
+  const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE}/api/products/offer-zone`)
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  }, []);
+  axios
+    .get(`${API_BASE}/api/offers`)
+    .then((res) => {
+      console.log("OFFERS:", res.data);
+      setOffers(res.data);
+    })
+    .catch(console.error)
+    .finally(() => setLoading(false));
+}, []);
 
   return (
     <section className="px-4 py-6">
-      <h2 className="text-lg font-bold mb-4">
-        🔥 Offer Zone
-      </h2>
+  <h2 className="text-lg font-bold mb-4">
+    🔥 Offer Zone
+  </h2>
 
-      {/* 🔄 Loading */}
-      {loading && <p className="text-sm text-gray-500">Loading offers...</p>}
+  {loading && (
+    <p className="text-sm text-gray-500">
+      Loading offers...
+    </p>
+  )}
 
-      {/* ❌ No products */}
-      {!loading && products.length === 0 && (
-        <p className="text-sm text-gray-500">
-          No offers available right now
-        </p>
-      )}
+  {!loading && offers.length === 0 && (
+    <p className="text-sm text-gray-500">
+      No offers available right now
+    </p>
+  )}
 
-      {/* ✅ Products */}
-      {products.length > 0 && (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {products.map((p) => (
-            <div key={p.id} className="min-w-[220px]">
-              <ProductCard p={p} isOffer={true} />
-            </div>
-          ))}
+  {offers.length > 0 && (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {offers.map((offer) => (
+        <div
+          key={offer.id}
+          className="bg-white shadow rounded-xl p-4 border"
+        >
+          <h3 className="font-bold text-red-600">
+            🎁 {offer.title}
+          </h3>
+
+          <p className="mt-2">
+            Buy {offer.buy_qty} {offer.buy_product_name}
+          </p>
+
+          <p className="text-green-600 font-semibold">
+            Get {offer.free_qty} {offer.free_product_name} FREE
+          </p>
         </div>
-      )}
-    </section>
+      ))}
+    </div>
+  )}
+</section>
   );
 }

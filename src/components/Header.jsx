@@ -297,16 +297,18 @@ useEffect(() => {
                         My Profile
                       </Link>
 
-                      <button
-                        onClick={() => {
-                          localStorage.clear();
-                          window.location.href = "/login";
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                      >
-                        Logout
-                      </button>
+                     <button
+  onClick={() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    // Don't remove cart
 
+    window.location.href = "/login";
+  }}
+  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+>
+  Logout
+</button>
                     </>
                   ) : (
 

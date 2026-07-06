@@ -8,7 +8,8 @@ import {
   FiBarChart,
   FiArchive,
   FiLayers,
-  FiDollarSign // ✅ NEW ICON
+  FiDollarSign ,
+  FiGift
 } from "react-icons/fi";
 import AdminNavbar from "./AdminNavbar";
 
@@ -81,6 +82,7 @@ export default function AdminLayout() {
   icon={<FiDollarSign />}
   label="Bulk Price Update"
   active={isActive("/admin/products/bulk-update")}
+  
 />
 
           {/* ================= Categories Section ================= */}
@@ -103,6 +105,12 @@ export default function AdminLayout() {
               active={isActive("/admin/subcategories")}
             />
           </div>
+          <SidebarItem
+  to="/admin/offers"
+  icon={<FiGift />}
+  label="Offers"
+  active={isActive("/admin/offers")}
+/>
 
           <SidebarItem
             to="/admin/stock"

@@ -41,7 +41,7 @@ export default function ProductCard({ p , subcategoryName}) {
   const wishlist = useSelector((s) => s.wishlist.items);
 
   if (!p?.id) return null;
-
+console.log("PRODUCT:", p);
   const img = getImageUrl(p);
   const stock = Number(p.stock || 0);
   const price = Number(p.price || 0);
@@ -115,6 +115,12 @@ export default function ProductCard({ p , subcategoryName}) {
     subcategoryName,
   }}
 >
+  {p.buy_qty && p.free_qty && (
+  <div className="absolute top-2 left-2 z-20 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">
+  BUY {Number(p.buy_qty)} GET {Number(p.free_qty)}
+</div>
+
+)}
         <div className="relative h-[150px] flex items-center justify-center mb-2">
 
           {/* 🔴 Expiry Badge */}
@@ -186,7 +192,7 @@ export default function ProductCard({ p , subcategoryName}) {
             name={p.name}
             price={finalPrice}
             image={img}
-            variantId={null}
+           variantId={p.variant_id}
             variantLabel={variantLabel}
             stock={stock}
           />

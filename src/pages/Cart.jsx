@@ -34,6 +34,7 @@ export default function Cart() {
   const [giftWrap, setGiftWrap] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [suggestedProducts, setSuggestedProducts] = useState([]);
+  const [offers, setOffers] = useState([]);
 
   /* ================= SELECTED ADDRESS ================= */
   const selectedAddress =
@@ -79,8 +80,53 @@ useEffect(() => {
 
   fetchSuggestions();
 }, [items]);
+useEffect(() => {
+  const fetchOffers = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/offers");
+      const data = await res.json();
+
+      setOffers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchOffers();
+}, []);
 
   /* ================= BILL CALCULATIONS ================= */
+  const freeItems = [];
+
+items.forEach((item) => {
+  const offer = Array.isArray(offers)
+  ? offers.find(
+      (o) =>
+        Number(o.buy_product_id) ===
+        Number(item.productId)
+    )
+  : null;
+  if (!offer) return;
+
+  const buyQty = Number(offer.buy_qty);
+  const freeQty = Number(offer.free_qty);
+
+  if (item.qty >= buyQty) {
+    const timesEligible = Math.floor(
+      item.qty / buyQty
+    );
+
+   freeItems.push({
+  name: offer.free_product_name,
+  variantLabel: offer.free_variant_label,   // <-- add this
+  image:
+    offer.free_product_image ||
+    JSON.parse(offer.free_product_images || "[]")?.[0]?.url ||
+    "/placeholder.png",
+  qty: timesEligible * freeQty,
+});
+  }
+});
   const itemTotal = items.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
@@ -135,6 +181,59 @@ useEffect(() => {
           {/* ================= LEFT ================= */}
           <div className="md:col-span-2 space-y-4">
             <h2 className="text-2xl font-semibold">My Cart</h2>
+             {freeItems.length > 0 && (
+  <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 shadow-sm">
+    
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">
+        🎁
+      </div>
+
+      <div>
+        <h3 className="font-bold text-green-700">
+          Congratulations!
+        </h3>
+
+        <p className="text-xs text-green-600">
+          You've unlocked free products
+        </p>
+      </div>
+    </div>
+
+    {freeItems.map((item, index) => (
+      <div
+        key={index}
+        className="bg-white rounded-xl p-3 flex items-center gap-3 border"
+      >
+        <img
+          src={item.image}
+          alt={item.name}
+          className="w-16 h-16 object-cover rounded-lg"
+        />
+
+       <div className="flex-1">
+  <h4 className="font-semibold">
+    {item.name}
+  </h4>
+
+  {item.variantLabel && (
+    <p className="text-sm text-gray-500">
+      {item.variantLabel}
+    </p>
+  )}
+
+  <p className="text-green-600 font-medium">
+    FREE × {item.qty}
+  </p>
+</div>
+
+        <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+          FREE
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
             {/* CART ITEMS */}
             {items.map((item) => (
@@ -142,6 +241,7 @@ useEffect(() => {
                 key={`${item.productId}-${item.variantId}`}
                 className="flex gap-4 bg-white rounded-xl shadow p-4"
               >
+               
                 <img
                   src={item.image}
                   alt={item.name}

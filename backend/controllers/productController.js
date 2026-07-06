@@ -64,6 +64,25 @@ export const uploadImages = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+function parseVariantLabel(label) {
+  const cleaned = label.trim().toLowerCase();
+
+  const match = cleaned.match(
+    /^(\d+(?:\.\d+)?)\s*(kg|g|l|ml|pack|packs)$/i
+  );
+
+  if (!match) {
+    return {
+      quantity: null,
+      unit: null,
+    };
+  }
+
+  return {
+    quantity: Number(match[1]),
+    unit: match[2] === "packs" ? "pack" : match[2].toLowerCase(),
+  };
+}
 /* ================= CREATE PRODUCT ================= */
 
 export const createProductWithVariants = async (req, res) => {
@@ -120,43 +139,37 @@ export const createProductWithVariants = async (req, res) => {
 
       if (!v.variant_label) continue;
 
-      await db.query(
-        `
-        INSERT INTO product_variants
-        (
-          product_id,
-          variant_label,
-          price,
-          mrp,
-          stock,
-          is_free_delivery,
-          is_today_deal
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          productId,
+      const { quantity, unit } =
+  parseVariantLabel(v.variant_label);
 
-          v.variant_label,
-
-          v.price
-            ? Number(v.price)
-            : 0,
-
-          v.mrp
-            ? Number(v.mrp)
-            : null,
-
-          v.stock
-            ? Number(v.stock)
-            : 0,
-
-          v.is_free_delivery || 0,
-
-          v.is_today_deal || 0,
-        ]
-      );
-
+await db.query(
+  `
+  INSERT INTO product_variants
+  (
+    product_id,
+    variant_label,
+    quantity,
+    unit,
+    price,
+    mrp,
+    stock,
+    is_free_delivery,
+    is_today_deal
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+  [
+    productId,
+    v.variant_label,
+    quantity,
+    unit,
+    v.price ? Number(v.price) : 0,
+    v.mrp ? Number(v.mrp) : null,
+    v.stock ? Number(v.stock) : 0,
+    v.is_free_delivery || 0,
+    v.is_today_deal || 0,
+  ]
+);
     }
 
     res.json({
@@ -182,29 +195,7 @@ export const getProducts = async (req, res) => {
     const limit = Number(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    // const [rows] = await db.query(
-    //   `
-    //   SELECT p.*,
-    //   (
-    //     SELECT v.variant_label FROM product_variants v
-    //     WHERE v.product_id = p.id
-    //     ORDER BY v.price ASC LIMIT 1
-    //   ) AS variant_label,
-
-    //   ${PRICE_QUERY}
-
-    //   (
-    //     SELECT SUM(v.stock) FROM product_variants v
-    //     WHERE v.product_id = p.id
-    //   ) AS stock
-
-    //   FROM products p
-    //   WHERE p.active = 1
-    //   ORDER BY p.id DESC
-    //   LIMIT ? OFFSET ?
-    //   `,
-    //   [limit, offset]
-    // );
+    
     const [rows] = await db.query(
   `
   SELECT 
@@ -213,13 +204,22 @@ export const getProducts = async (req, res) => {
     c.name AS category_name,
     s.name AS subcategory_name,
 
+   
     (
-      SELECT v.variant_label 
-      FROM product_variants v
-      WHERE v.product_id = p.id
-      ORDER BY v.price ASC 
-      LIMIT 1
-    ) AS variant_label,
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
+
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
 
     ${PRICE_QUERY}
 
@@ -238,8 +238,8 @@ export const getProducts = async (req, res) => {
   ON p.subcategory_id = s.id
 
   WHERE p.active = 1
+ORDER BY p.id DESC
 
-  ORDER BY p.id DESC
 
   LIMIT ? OFFSET ?
   `,
@@ -260,13 +260,22 @@ export const getProductsByCategory = async (req, res) => {
       SELECT
         p.*,
 
+       
         (
-          SELECT v.variant_label
-          FROM product_variants v
-          WHERE v.product_id = p.id
-          ORDER BY v.price ASC
-          LIMIT 1
-        ) AS variant_label,
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
+
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
 
         (
           SELECT COALESCE(
@@ -316,9 +325,8 @@ export const getProductsByCategory = async (req, res) => {
 
       FROM products p
       WHERE p.category_id = ?
-      AND p.active = 1
-      ORDER BY p.id DESC
-      `,
+AND p.active = 1
+ORDER BY p.id DESC`,
       [categoryId]
     );
 
@@ -343,7 +351,7 @@ export const getProductsBySubcategory = async (req, res) => {
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id
       WHERE p.subcategory_id = ?
-        AND p.active = 1
+AND p.active = 1
       GROUP BY p.id
       `,
       [subcategoryId]
@@ -452,6 +460,37 @@ export const getProduct = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+/* ================= GET PRODUCT VARIANTS ================= */
+export const getProductVariants = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        id,
+        variant_label,
+        price,
+        mrp,
+        stock
+      FROM product_variants
+      WHERE product_id = ?
+      ORDER BY quantity
+      `,
+      [id]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+
+    res.status(500).json({
+      message: err.message,
+    });
+
+  }
+};
 /* ================= UPDATE PRODUCT ================= */
 export const updateProduct = async (req, res) => {
   try {
@@ -503,23 +542,67 @@ export const updateProduct = async (req, res) => {
       if (!v.variant_label) continue;
  
       if (v.id) {
-        await db.query(
-          `
-          UPDATE product_variants
-          SET variant_label=?, price=?, mrp=?, stock=?, is_free_delivery=?, is_today_deal=?
-          WHERE id=?
-          `,
-          [v.variant_label, v.price, v.mrp, v.stock, v.is_free_delivery || 0, v.is_today_deal || 0, v.id]
-        );
+        const { quantity, unit } =
+  parseVariantLabel(v.variant_label);
+
+await db.query(
+  `
+  UPDATE product_variants
+  SET
+    variant_label=?,
+    quantity=?,
+    unit=?,
+    price=?,
+    mrp=?,
+    stock=?,
+    is_free_delivery=?,
+    is_today_deal=?
+  WHERE id=?
+  `,
+  [
+    v.variant_label,
+    quantity,
+    unit,
+    v.price,
+    v.mrp,
+    v.stock,
+    v.is_free_delivery || 0,
+    v.is_today_deal || 0,
+    v.id
+  ]
+);
       } else {
-        await db.query(
-          `
-          INSERT INTO product_variants
-          (product_id, variant_label, price, mrp, stock, is_free_delivery, is_today_deal)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-          `,
-          [id, v.variant_label, v.price, v.mrp, v.stock, v.is_free_delivery || 0, v.is_today_deal || 0]
-        );
+        const { quantity, unit } =
+  parseVariantLabel(v.variant_label);
+
+await db.query(
+  `
+  INSERT INTO product_variants
+  (
+    product_id,
+    variant_label,
+    quantity,
+    unit,
+    price,
+    mrp,
+    stock,
+    is_free_delivery,
+    is_today_deal
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+  [
+    id,
+    v.variant_label,
+    quantity,
+    unit,
+    v.price,
+    v.mrp,
+    v.stock,
+    v.is_free_delivery || 0,
+    v.is_today_deal || 0
+  ]
+);
       }
     }
  
@@ -650,13 +733,22 @@ export const searchProducts = async (req, res) => {
         p.image,
 
         /* VARIANT */
-        (
-          SELECT v.variant_label
-          FROM product_variants v
-          WHERE v.product_id = p.id
-          LIMIT 1
-        ) AS variant_label,
+        
+(
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
 
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
         /* PRICE */
         (
           SELECT v.price
@@ -729,13 +821,22 @@ export const getTopPicks = async (req, res) => {
       SELECT
         p.*,
 
+        
         (
-          SELECT v.variant_label
-          FROM product_variants v
-          WHERE v.product_id = p.id
-          ORDER BY v.price ASC
-          LIMIT 1
-        ) AS variant_label,
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
+
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
 
         (
           SELECT v.price
@@ -761,7 +862,21 @@ export const getTopPicks = async (req, res) => {
 
       FROM products p
       WHERE p.active = 1
-      ORDER BY p.id DESC
+
+AND NOT EXISTS (
+  SELECT 1
+  FROM product_variants pv
+  WHERE pv.product_id = p.id
+    AND (
+      (pv.unit = 'kg' AND pv.quantity >= 3)
+      OR
+      (pv.unit = 'l' AND pv.quantity >= 3)
+      OR
+      (pv.unit = 'pack' AND pv.quantity >= 12)
+    )
+)
+
+ORDER BY p.id DESC
       LIMIT 10
     `);
 
@@ -777,42 +892,81 @@ export const getTopPicks = async (req, res) => {
 export const getOfferZoneProducts = async (req, res) => {
   try {
 
-    const [rows] = await db.query(`
-      SELECT DISTINCT
-        p.*,
+    const [offers] = await db.query(`
+     SELECT
+    bp.id AS id,
+    o.id AS offer_id,
 
-        pv.variant_label,
-        pv.price,
-        pv.mrp,
-        pv.stock,
+    bp.name,
+    bp.images,
+    bp.brand,
+    bp.description,
+    bp.category_id,
+    bp.subcategory_id,
 
-        ROUND(
-          ((pv.mrp - pv.price) / pv.mrp) * 100
-        ) AS discount_percentage
+    o.buy_qty,
+    o.free_qty,
 
-      FROM products p
+    fp.name AS free_product_name,
 
-      JOIN product_variants pv
-      ON p.id = pv.product_id
+    
+    (
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
 
-      WHERE
-        p.active = 1
-        AND pv.mrp IS NOT NULL
-        AND pv.mrp > pv.price
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
 
-      ORDER BY discount_percentage DESC
+    (
+      SELECT price
+      FROM product_variants
+      WHERE product_id = bp.id
+      ORDER BY price
+      LIMIT 1
+    ) AS price,
+
+    (
+      SELECT mrp
+      FROM product_variants
+      WHERE product_id = bp.id
+      ORDER BY price
+      LIMIT 1
+    ) AS mrp,
+
+    (
+      SELECT SUM(stock)
+      FROM product_variants
+      WHERE product_id = bp.id
+    ) AS stock
+
+FROM offers o
+
+JOIN products bp
+ON bp.id = o.buy_product_id
+
+JOIN products fp
+ON fp.id = o.free_product_id
+
+WHERE o.active = 1;
     `);
 
-    res.json(normalizeProducts(rows));
+    res.json(offers);
 
   } catch (err) {
-
-    console.log("OFFER ZONE ERROR:", err);
+    console.log(err);
 
     res.status(500).json({
       message: err.message
     });
-
   }
 };
 export const getFreeDeliveryProducts = async (req, res) => {
@@ -914,15 +1068,27 @@ export const getHalfPriceProducts = async (req, res) => {
 export const getSuperStoreProducts = async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT *
-      FROM products
-      WHERE is_super_store = 1
+      SELECT DISTINCT p.*
+      FROM products p
+      JOIN product_variants pv
+        ON pv.product_id = p.id
+      WHERE p.active = 1
+        AND p.status = 'ACTIVE'
+        AND (
+          (pv.unit = 'kg' AND pv.quantity >= 3)
+          OR
+          (pv.unit = 'l' AND pv.quantity >= 3)
+          OR
+          (pv.unit = 'pack' AND pv.quantity >= 12)
+        )
+      ORDER BY p.created_at DESC
     `);
+
+    console.log("SUPER STORE PRODUCTS:", rows);
 
     return res.json(rows);
 
   } catch (err) {
-
     console.error("SUPER STORE ERROR:", err);
 
     return res.status(500).json({
@@ -1027,13 +1193,22 @@ export const getCartSuggestions = async (req, res) => {
       SELECT
         p.*,
 
-        (
-          SELECT v.variant_label
-          FROM product_variants v
-          WHERE v.product_id = p.id
-          ORDER BY v.price ASC
-          LIMIT 1
-        ) AS variant_label,
+       (
+  SELECT v.id
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_id,
+
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
+
 
         (
           SELECT v.price
@@ -1138,23 +1313,35 @@ export const bulkUploadProducts = async (req, res) => {
         let productId;
 
         if (!existingProduct.length) {
-          const [result] = await db.query(
-            `INSERT INTO products
-            (name, category_id, subcategory_id, brand, description, weight, unit, images, active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-            [
-              r.name,
-              category_id,
-              subcategory_id,
-              r.brand || "Generic",
-              r.description || "No description",
-              r.weight || null,
-              r.unit || null,
-              JSON.stringify(imagesArray),
-            ]
-          );
+           const { quantity, unit } =
+  parseVariantLabel(r.variant_label);
 
-          productId = result.insertId;
+const [variantResult] = await db.query(
+  `
+  INSERT INTO product_variants
+  (
+    product_id,
+    variant_label,
+    quantity,
+    unit,
+    price,
+    mrp,
+    stock
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+  `,
+  [
+    productId,
+    r.variant_label,
+    quantity,
+    unit,
+    price,
+    mrp,
+    stock
+  ]
+);
+
+          productId = variantResult.insertId;
         } else {
           productId = existingProduct[0].id;
         }

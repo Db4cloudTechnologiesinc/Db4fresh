@@ -325,8 +325,7 @@ const discount =
         
            <AddToCartButton
   productId={product.id}
-  // variantId={selectedVariant?.id ?? "default"}
-  variantId={"default"}
+ variantId={selectedVariant?.id ?? null}
   name={product.name}
   price={selectedVariant?.price ?? product.price}
   image={mainImage}
@@ -338,9 +337,9 @@ const discount =
       </div>
 
       {/* OTHER SECTIONS */}
-      <SimilarProducts productId={product.id} />
-      <SuggestedProducts productId={product.id} />
-      <ReviewsSection productId={product.id} />
+      <SimilarProducts productId={id} />
+      <SuggestedProducts productId={id} />
+      <ReviewsSection productId={id} />
 
       {/* FULLSCREEN IMAGE */}
       {fullscreen && (

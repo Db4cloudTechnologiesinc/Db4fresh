@@ -84,23 +84,29 @@ console.log("CART ITEMS", cartItems);
   /* 🟢 ADD BUTTON */
   return (
     <button
-      onClick={() =>
-        dispatch(
-          addToCart({
-            productId,
-            variantId,
-            name,
-            price,
-            image,
-            variantLabel,
-            stock,
-            qty: 1,
-          })
-        )
-      }
-      className="w-[90px] h-[34px] border border-red-600 text-red-700 font-semibold rounded-lg hover:bg-red-50 transition"
-    >
-      ADD
-    </button>
+  onClick={() => {
+    console.log("ADDING TO CART", {
+      productId,
+      variantId,
+      name,
+    });
+
+    dispatch(
+      addToCart({
+        productId,
+        variantId,
+        name,
+        price,
+        image,
+        variantLabel,
+        stock,
+        qty: 1,
+      })
+    );
+  }}
+  className="w-[90px] h-[34px] border border-red-600 text-red-700 font-semibold rounded-lg hover:bg-red-50 transition"
+>
+  ADD
+</button>
   );
 }

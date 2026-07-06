@@ -7,7 +7,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import startConsumer from "./kafka/consumer.js";
- 
+ import { connectProducer } from "./kafka/producer.js";
 /* ================= FIX __dirname FOR ES MODULE ================= */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +27,7 @@ import invoiceRoutes from "./routes/invoiceRoutes.js";
 import reorderRoutes from "./routes/reorderRoutes.js";
 import cancelOrderRoutes from "./routes/cancelOrderRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import offerRoutes from "./routes/offerRoutes.js";
 
 import walletRoutes from "./routes/walletRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
@@ -99,6 +100,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/subcategories", subCategoryRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/banner-products", bannerProductsRoutes);
+app.use("/api/offers", offerRoutes);
 
 /* ================= DELIVERY SYSTEM ================= */
 app.use("/api/delivery", deliveryRoutes);
@@ -118,13 +120,31 @@ app.get("/", (req, res) => {
  
 /* ================= ERROR HANDLER ================= */
 app.use(errorHandler);
-startConsumer();
+// // startConsumer();
+// // await connectProducer();
  
-/* ================= SERVER START ================= */
+// /* ================= SERVER START ================= */
+// const PORT = process.env.PORT || 4000;
+
+ 
+// app.listen(PORT, () => {
+//   console.log("🚀 Server running on port", PORT);
+//   console.log("📂 Serving uploads from:", path.join(__dirname, "uploads"));
+// });
+ 
 const PORT = process.env.PORT || 4000;
- 
+
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
-  console.log("📂 Serving uploads from:", path.join(__dirname, "uploads"));
+  console.log(`🚀 Server running on ${PORT}`);
 });
- 
+
+// Start Kafka in background
+(async () => {
+  try {
+    await connectProducer();
+    await startConsumer();
+    console.log("✅ Kafka Ready");
+  } catch (err) {
+    console.log("Kafka not available");
+  }
+})();

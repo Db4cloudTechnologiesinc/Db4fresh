@@ -35,13 +35,9 @@ export default function Checkout() {
   const [selectedAddress, setSelectedAddress] = useState(
     reorderData?.address || null
   );
+  const [offers, setOffers] = useState([]);
 
-  // /* ================= BLOCK INVALID ACCESS ================= */
-  // useEffect(() => {
-  //   if (!items || items.length === 0) {
-  //     navigate("/");
-  //   }
-  // }, [items, navigate]);
+  
 
   /* ================= TOTAL ================= */
   const subtotal = items.reduce(
@@ -51,7 +47,34 @@ export default function Checkout() {
         (item.qty || item.quantity || 1),
     0
   );
+const freeItems = [];
 
+items.forEach((item) => {
+  const offer = offers.find(
+    (o) =>
+      Number(o.buy_product_id) ===
+      Number(item.productId)
+  );
+
+  if (!offer) return;
+
+  const eligibleCount = Math.floor(
+    item.qty / Number(offer.buy_qty)
+  );
+
+  if (eligibleCount > 0) {
+  freeItems.push({
+  productId: offer.free_product_id,
+  variantId: offer.free_variant_id,          // ✅ add this
+  variantLabel: offer.free_variant_label,    // optional
+  name: offer.free_product_name,
+  qty: eligibleCount * Number(offer.free_qty),
+  quantity: eligibleCount * Number(offer.free_qty),
+  price: 0,
+  isFree: true,
+});
+  }
+});
   /* ================= PLACE COD ORDER ================= */
   const placeCODOrder = async () => {
     const finalAddress =
@@ -84,12 +107,13 @@ export default function Checkout() {
         phone: finalAddress.phone || "",
       };
       const payload = {
-        items,
-        totalAmount: subtotal,
-        paymentMethod: "COD",
-        address: fullAddress,
-        deliverySlot: selectedSlot,
-      };
+  items: [...items, ...freeItems],
+  totalAmount: subtotal,
+  paymentMethod: "COD",
+  address: fullAddress,
+  deliverySlot: selectedSlot,
+};
+console.log("ITEMS:", JSON.stringify(payload.items, null, 2));
 
       const res = await fetch(
         "http://localhost:4000/api/orders/order",
@@ -122,6 +146,7 @@ if (!res.ok) {
     }
   };
 
+
   /* ================= ONLINE PAYMENT ================= */
   const goToPayment = () => {
     const finalAddress =
@@ -144,7 +169,20 @@ if (!res.ok) {
 
     navigate("/payment");
   };
+useEffect(() => {
+  const fetchOffers = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/offers");
+      const data = await res.json();
 
+      setOffers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchOffers();
+}, []);
   /* ================= UI ================= */
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

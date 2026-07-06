@@ -88,10 +88,17 @@ router.get("/:type", async (req, res) => {
       SUM(pv.stock) AS stock,
       MIN(pv.mrp) AS mrp
     FROM products p
-    LEFT JOIN product_variants pv
+    JOIN product_variants pv
       ON pv.product_id = p.id
-    WHERE pv.is_super_store = 1
-      AND p.active = 1
+    WHERE p.active = 1
+      AND p.status = 'ACTIVE'
+      AND (
+        (pv.unit = 'kg' AND pv.quantity >= 3)
+        OR
+        (pv.unit = 'l' AND pv.quantity >= 3)
+        OR
+        (pv.unit = 'pack' AND pv.quantity >= 12)
+      )
     GROUP BY p.id
   `;
   break;

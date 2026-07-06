@@ -6,9 +6,11 @@ import ProductCard from "./ProductCard";
 export default function SuggestedProducts({ productId }) {
   const [products, setProducts] = useState([]);
 
-  useEffect(() => {
-    axios
-      .get(`http://localhost:4000/api/products/${productId}/suggested`)
+ useEffect(() => {
+  if (!productId) return;
+
+  axios
+    .get(`http://localhost:4000/api/products/${productId}/suggested`)
       .then((res) => setProducts(res.data || []))
       .catch((err) =>
         console.error("Suggested products error:", err)

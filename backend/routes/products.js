@@ -4,6 +4,7 @@ import db from "../config/db.js";
 import {
   getProducts,
   getProduct,
+  getProductVariants,
   createProductWithVariants,
   updateProduct,
   deleteProduct,
@@ -59,6 +60,7 @@ router.get("/cart-suggestions/:id", getCartSuggestions);
 /* ================= MAIN PRODUCTS ================= */
 router.get("/", getProducts);
 router.get("/products", getAdminProducts);
+router.get("/:id/variants", getProductVariants);
 
 router.post("/", createProductWithVariants);
  router.post(
@@ -83,29 +85,6 @@ router.get("/offer-zone", getOfferZoneProducts);
 router.get("/:id", getProduct);
 router.put("/:id", updateProduct);
 router.delete("/:id", deleteProduct);
-// router.put("/:id/status", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { status } = req.body;
-
-//     await db.query(
-//       "UPDATE products SET status=? WHERE id=?",
-//       [status, id]
-//     );
-
-//     res.json({
-//       success: true,
-//       message: "Product status updated",
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({
-//       message: err.message,
-//     });
-//   }
-// });
- 
-
  
  router.put("/:id/status", async (req, res) => {
   try {

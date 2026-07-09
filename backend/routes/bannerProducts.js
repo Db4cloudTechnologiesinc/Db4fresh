@@ -54,29 +54,67 @@ router.get("/:type", async (req, res) => {
   `;
   break;
 
-      /* 🟠 TODAY DEAL */
+    
+    /* 🟠 TODAY DEAL */
     case "todays-deal":
   query = `
     SELECT
-      p.*,
+      p.id,
+      p.name,
+      p.brand,
+      p.image,
+      p.images,
+      p.expiry_date,
+ 
       MIN(pv.price) AS price,
       SUM(pv.stock) AS stock,
-      MIN(pv.mrp) AS mrp
+      MIN(pv.mrp) AS mrp,
+ 
+      c.name AS category_name,
+ 
+      DATEDIFF(
+        p.expiry_date,
+        CURDATE()
+      ) AS days_left
+ 
     FROM products p
+ 
     JOIN product_variants pv
       ON pv.product_id = p.id
-    WHERE pv.is_today_deal = 1
-      AND p.active = 1
+ 
+    JOIN categories c
+      ON c.id = p.category_id
+ 
+    WHERE
+      p.active = 1
+      AND p.expiry_date IS NOT NULL
+      AND c.name IN (
+        'Fruits',
+        'Vegetables',
+        'Dairy',
+        'Meat, Fish & Eggs'
+      )
+ 
     GROUP BY p.id
+ 
+    HAVING
+      SUM(pv.stock) > 0
+      AND DATEDIFF(
+        p.expiry_date,
+        CURDATE()
+      ) BETWEEN 0 AND 3
+ 
+    ORDER BY days_left ASC
   `;
   break;
-      /* 🟣 OFFER ZONE (EXPIRY) */
+        /* 🟣 OFFER ZONE (EXPIRY) */
       case "offer-zone":
         query = baseQuery + `
           WHERE p.expiry_date IS NOT NULL
           AND p.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
           GROUP BY p.id
         `;
+        
         break;
 
       /* 🟡 SUPER STORE */
@@ -104,21 +142,38 @@ router.get("/:type", async (req, res) => {
   break;
 
       /* 🔴 50% OFF */
-      case "50-off":
-  
+       /* 🔴 50% OFF */
+    case "50-off":
   query = `
     SELECT
       p.*,
+      c.name AS category_name,
       MIN(pv.price) AS price,
-      SUM(pv.stock) AS stock,
-      MIN(pv.mrp) AS mrp,
-      ROUND(((MIN(pv.mrp) - MIN(pv.price)) / MIN(pv.mrp)) * 100) AS discount
+      COALESCE(SUM(pv.stock),0) AS stock,
+      MIN(pv.mrp) AS mrp
+ 
     FROM products p
-    JOIN product_variants pv ON pv.product_id = p.id
-    WHERE pv.mrp > pv.price
-      AND p.active = 1
+ 
+    LEFT JOIN product_variants pv
+      ON pv.product_id = p.id
+ 
+    LEFT JOIN categories c
+      ON c.id = p.category_id
+ 
+    WHERE c.name IN (
+      'Groceries',
+      'Dry Fruits & Nuts',
+      'Snacks',
+      'Home Care',
+      'Fashion',
+      'Beauty'
+    )
+ 
     GROUP BY p.id
-    HAVING discount >= 50
+ 
+    HAVING stock >= 20
+ 
+    ORDER BY stock DESC
   `;
   break;
 

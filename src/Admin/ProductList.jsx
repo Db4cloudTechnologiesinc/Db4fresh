@@ -276,7 +276,7 @@
 //   );
 // }
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import BulkUpload from "./BulkUpload";
 
 export default function ProductList() {
@@ -290,6 +290,8 @@ export default function ProductList() {
   const [brand, setBrand] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [searchParams] = useSearchParams();
+const filter = searchParams.get("filter");
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -359,6 +361,16 @@ const fetchProducts = async () => {
     if (maxPrice) {
       data = data.filter((p) => p.price <= maxPrice);
     }
+
+    if (filter === "outofstock") {
+  data = data.filter((p) => Number(p.stock) === 0);
+}
+
+if (filter === "lowstock") {
+  data = data.filter(
+    (p) => Number(p.stock) > 0 && Number(p.stock) <= 10
+  );
+}
 
     setFiltered(data);
   }, [search, brand, minPrice, maxPrice, products]);

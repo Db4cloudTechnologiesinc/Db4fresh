@@ -14,6 +14,31 @@ export const getDashboardStats = async (req, res) => {
       SELECT IFNULL(SUM(total_amount), 0) AS amount
       FROM orders
     `);
+    const [[todayOrders]] = await db.query(`
+  SELECT COUNT(*) AS count
+  FROM orders
+  WHERE DATE(created_at) = CURDATE()
+`);
+
+const [[pendingOrders]] = await db.query(`
+  SELECT COUNT(*) AS count
+  FROM orders
+  WHERE order_status = 'PLACED'
+`);
+
+const [[outOfStock]] = await db.query(`
+  SELECT COUNT(*) AS count
+  FROM product_variants
+  WHERE stock = 0
+`);
+
+const [[lowStock]] = await db.query(`
+  SELECT COUNT(*) AS count
+  FROM product_variants
+  WHERE stock > 0
+    AND stock < 10
+`);
+   
 
     console.log("DEBUG:", {
       products,
@@ -23,20 +48,29 @@ export const getDashboardStats = async (req, res) => {
     });
 
     res.json({
-      products: products.count,
-      orders: orders.count,
-      users: users.count,
-      revenue: revenue.amount,
-    });
+  products: products.count,
+  orders: orders.count,
+  users: users.count,
+  revenue: revenue.amount,
+
+  todayOrders: todayOrders.count,
+  pendingOrders: pendingOrders.count,
+  outOfStock: outOfStock.count,
+  lowStock: lowStock.count,
+});
 
   } catch (err) {
     console.error("DASHBOARD ERROR:", err);
     res.status(500).json({
-      products: 0,
-      orders: 0,
-      users: 0,
-      revenue: 0,
-    });
+  products: 0,
+  orders: 0,
+  users: 0,
+  revenue: 0,
+  todayOrders: 0,
+  pendingOrders: 0,
+  outOfStock: 0,
+  lowStock: 0,
+});
   }
 };
 /* =========================

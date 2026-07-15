@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 
 const TABS = [
@@ -13,11 +13,19 @@ const TABS = [
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
-  const [activeTab, setActiveTab] = useState("all");
+const navigate = useNavigate();
+const [searchParams] = useSearchParams();
+
+const filter = searchParams.get("filter");
+
+const [activeTab, setActiveTab] = useState(
+  filter === "pending" ? "PLACED" : "all"
+);
   
 const [search, setSearch] = useState("");
 const [sortOrder, setSortOrder] = useState("newest");
-  const navigate = useNavigate();
+  
+  
 
   useEffect(() => {
     fetch("http://localhost:4000/api/orders")
@@ -33,7 +41,16 @@ const [sortOrder, setSortOrder] = useState("newest");
   }, []);
 
   /* ================= FILTER ================= */
-  const filteredOrders = orders
+  let displayOrders = [...orders];
+
+if (filter === "today") {
+  displayOrders = displayOrders.filter(
+    (o) =>
+      new Date(o.created_at).toDateString() ===
+      new Date().toDateString()
+  );
+}
+  const filteredOrders = displayOrders
   .filter((o) =>
     activeTab === "all"
       ? true

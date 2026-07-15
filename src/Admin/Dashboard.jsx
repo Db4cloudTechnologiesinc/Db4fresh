@@ -5,11 +5,16 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState({
-    products: 0,
-    orders: 0,
-    users: 0,
-    revenue: 0,
-  });
+  products: 0,
+  orders: 0,
+  users: 0,
+  revenue: 0,
+
+  todayOrders: 0,
+  pendingOrders: 0,
+  outOfStock: 0,
+  lowStock: 0,
+});
 
   const [notifications, setNotifications] = useState([]);
   const [showBox, setShowBox] = useState(false);
@@ -95,11 +100,16 @@ const loadNotifications = async () => {
       const data = await res.json();
 
       setStats({
-        products: Number(data.products) || 0,
-        orders: Number(data.orders) || 0,
-        users: Number(data.users) || 0,
-        revenue: Number(data.revenue) || 0,
-      });
+  products: Number(data.products) || 0,
+  orders: Number(data.orders) || 0,
+  users: Number(data.users) || 0,
+  revenue: Number(data.revenue) || 0,
+
+  todayOrders: Number(data.todayOrders) || 0,
+  pendingOrders: Number(data.pendingOrders) || 0,
+  outOfStock: Number(data.outOfStock) || 0,
+  lowStock: Number(data.lowStock) || 0,
+});
     } catch (error) {
       console.error("Dashboard error:", error);
     } finally {
@@ -212,31 +222,59 @@ const loadNotifications = async () => {
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <DashboardCard
-          title="Products"
-          value={stats.products}
-          onClick={() => navigate("/admin/products")}
-        />
 
-        <DashboardCard
-          title="Orders"
-          value={stats.orders}
-          onClick={() => navigate("/admin/orders")}
-        />
+  <DashboardCard
+    title="Products"
+    value={stats.products}
+    onClick={() => navigate("/admin/products")}
+  />
 
-        <DashboardCard
-          title="Users"
-          value={stats.users}
-          onClick={() => navigate("/admin/users")}
-        />
+  <DashboardCard
+    title="Orders"
+    value={stats.orders}
+    onClick={() => navigate("/admin/orders")}
+  />
 
-        <DashboardCard
-          title="Revenue"
-          value={`₹${stats.revenue}`}
-          valueClass="text-green-600"
-          onClick={() => navigate("/admin/revenue")}
-        />
-      </div>
+  <DashboardCard
+    title="Users"
+    value={stats.users}
+    onClick={() => navigate("/admin/users")}
+  />
+
+  <DashboardCard
+    title="Revenue"
+    value={`₹${stats.revenue}`}
+    valueClass="text-green-600"
+    onClick={() => navigate("/admin/revenue")}
+  />
+
+  <DashboardCard
+    title="Today's Orders"
+    value={stats.todayOrders}
+    onClick={() => navigate("/admin/orders?filter=today")}
+  />
+
+  <DashboardCard
+    title="Pending Orders"
+    value={stats.pendingOrders}
+    onClick={() => navigate("/admin/orders?filter=pending")}
+  />
+
+  <DashboardCard
+    title="Out of Stock"
+    value={stats.outOfStock}
+    valueClass="text-red-600"
+    onClick={() => navigate("/admin/products?filter=outofstock")}
+  />
+
+  <DashboardCard
+    title="Low Stock Alert"
+    value={stats.lowStock}
+    valueClass="text-orange-600"
+    onClick={() => navigate("/admin/products?filter=lowstock")}
+  />
+
+</div>
     </div>
   );
 }

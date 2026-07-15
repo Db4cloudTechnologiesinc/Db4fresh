@@ -33,14 +33,14 @@ export default function Cart() {
   /* ================= UI STATES ================= */
   const [giftWrap, setGiftWrap] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(
+  JSON.parse(localStorage.getItem("selected_address")) || null
+);
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const [offers, setOffers] = useState([]);
 
   /* ================= SELECTED ADDRESS ================= */
-  const selectedAddress =
-    JSON.parse(localStorage.getItem("selected_address")) ||
-    addresses.find((a) => a.is_default) ||
-    null;
+  
 
   /* ================= FETCH ADDRESSES ================= */
   useEffect(() => {
@@ -538,9 +538,16 @@ items.forEach((item) => {
       {/* ADDRESS MODAL */}
       {showAddressModal && (
         <AddressSection
-          onClose={() => setShowAddressModal(false)}
-          onSelect={() => setShowAddressModal(false)}
-        />
+  onClose={() => setShowAddressModal(false)}
+  onSelect={(address) => {
+    setSelectedAddress(address);
+    localStorage.setItem(
+      "selected_address",
+      JSON.stringify(address)
+    );
+    setShowAddressModal(false);
+  }}
+/>
       )}
     </>
   );

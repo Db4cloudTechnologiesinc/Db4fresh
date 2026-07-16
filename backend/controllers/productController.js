@@ -1248,176 +1248,386 @@ export const getCartSuggestions = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 export const bulkUploadProducts = async (req, res) => {
   try {
-    const excelFile = req.files["file"][0];
-    const imageFiles = req.files["images"] || [];
+    console.log("========== BULK UPLOAD STARTED ==========");
+console.log("Files:", req.files);
 
-    const workbook = XLSX.readFile(excelFile.path);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+const excelFile = req.files["file"][0];
+const imageFiles = req.files["images"] || [];
 
-    // ✅ Map images
-    const imageMap = {};
-    imageFiles.forEach((file) => {
-      imageMap[file.originalname] = file.filename;
-    });
+// ================= READ WORKBOOK =================
+const workbook = XLSX.readFile(excelFile.path);
 
-    const errors = [];
+const productsSheet = workbook.Sheets["Products"];
+const variantsSheet = workbook.Sheets["Product_Variants"];
 
-    for (const r of rows) {
-      try {
-        if (!r.name || !r.category_id || !r.variant_label) {
-          throw new Error("Missing required fields");
-        }
+if (!productsSheet) {
+  return res.status(400).json({
+    message: "Products sheet not found",
+  });
+}
 
-        const category_id = Number(r.category_id);
-        const subcategory_id = r.subcategory_id
-          ? Number(r.subcategory_id)
-          : null;
+if (!variantsSheet) {
+  return res.status(400).json({
+    message: "Product_Variants sheet not found",
+  });
+}
 
-        const price = Number(r.price) || 0;
-        const mrp = Number(r.mrp) || 0;
-        const stock = Number(r.stock) || 0;
+const products = XLSX.utils.sheet_to_json(productsSheet);
+const variants = XLSX.utils.sheet_to_json(variantsSheet);
 
-        // ================= IMAGE LOGIC =================
-        let imagesArray = [];
+console.log("Products:", products.length);
+console.log("Variants:", variants.length);
 
-        if (r.images) {
-          const imageList = r.images.split(",").map((img) => img.trim());
+// ================= IMAGE MAP =================
+const imageMap = {};
 
-          imagesArray = imageList
-            .map((img) => {
-              if (img.startsWith("http")) return { url: img };
+imageFiles.forEach((file) => {
+  imageMap[file.originalname] = file.filename;
+});
 
-              if (imageMap[img]) {
-                return { url: `/uploads/products/${imageMap[img]}` };
-              }
+const productMap = {};
+const errors = [];
 
-              return null;
-            })
-            .filter(Boolean);
-        }
+// ===================================================
+// INSERT PRODUCTS
+// ===================================================
 
-        if (imagesArray.length === 0) {
-          imagesArray.push({ url: "/uploads/products/default.png" });
-        }
-        // =================================================
+for (const p of products) {
+  try {
+    console.log("Processing Product:", p["Product Name"]);
 
-        // ✅ Check product
-        const [existingProduct] = await db.query(
-          "SELECT id FROM products WHERE name=? AND category_id=?",
-          [r.name, category_id]
-        );
+    const productName = String(p["Product Name"]).trim();
+    const categoryName = String(p["Category"]).trim();
 
-        let productId;
+    // ---------- CATEGORY ----------
+    const [category] = await db.query(
+      "SELECT id FROM categories WHERE LOWER(name)=LOWER(?)",
+      [categoryName]
+    );
 
-        if (!existingProduct.length) {
-           const { quantity, unit } =
-  parseVariantLabel(r.variant_label);
+    if (!category.length) {
+      throw new Error(`Category '${categoryName}' not found`);
+    }
 
-const [variantResult] = await db.query(
-  `
-  INSERT INTO product_variants
-  (
-    product_id,
-    variant_label,
-    quantity,
-    unit,
-    price,
-    mrp,
-    stock
-  )
-  VALUES (?, ?, ?, ?, ?, ?, ?)
-  `,
-  [
-    productId,
-    r.variant_label,
-    quantity,
-    unit,
-    price,
-    mrp,
-    stock
-  ]
-);
+    const category_id = category[0].id;
 
-          productId = variantResult.insertId;
-        } else {
-          productId = existingProduct[0].id;
-        }
+    // ---------- SUBCATEGORY ----------
+    let subcategory_id = null;
 
-        // ✅ Check if variant already exists
-        const [existingVariant] = await db.query(
-          `SELECT id FROM product_variants 
-           WHERE product_id = ? AND variant_label = ?`,
-          [productId, r.variant_label]
-        );
+    if (p["Subcategory"]) {
+      const [subcategory] = await db.query(
+        `SELECT id
+         FROM subcategories
+         WHERE name=? AND category_id=?`,
+        [p["Subcategory"], category_id]
+      );
 
-        let variantId;
+      if (subcategory.length) {
+        subcategory_id = subcategory[0].id;
+      }
+    }
 
-        if (!existingVariant.length) {
-          // 👉 create new variant
-          const [variantResult] = await db.query(
-            `INSERT INTO product_variants
-            (product_id, variant_label, price, mrp, stock)
-            VALUES (?, ?, ?, ?, ?)`,
-            [productId, r.variant_label, price, mrp, stock]
-          );
+    // ---------- IMAGE ----------
+    let imagesArray = [];
 
-          variantId = variantResult.insertId;
-        } else {
-          // 👉 update existing variant
-          variantId = existingVariant[0].id;
+    if (p["Image URL"]) {
+      const img = String(p["Image URL"]).trim();
 
-          await db.query(
-            `UPDATE product_variants
-             SET price=?, mrp=?, stock=?
-             WHERE id=?`,
-            [price, mrp, stock, variantId]
-          );
-        }
-
-        // ✅ SMART PRICE INSERT (ONLY IF CHANGED)
-        const [lastPrice] = await db.query(
-          `SELECT selling_price FROM product_prices
-           WHERE variant_id = ?
-           ORDER BY created_at DESC
-           LIMIT 1`,
-          [variantId]
-        );
-
-        if (
-          !lastPrice.length ||
-          Number(lastPrice[0].selling_price) !== price
-        ) {
-          await db.query(
-            `
-            INSERT INTO product_prices
-            (variant_id, selling_price, mrp, created_at)
-            VALUES (?, ?, ?, NOW())
-            `,
-            [variantId, price, mrp]
-          );
-        }
-
-      } catch (err) {
-        errors.push({
-          row: r,
-          error: err.message,
+      if (img.startsWith("http")) {
+        imagesArray.push({ url: img });
+      } else if (imageMap[img]) {
+        imagesArray.push({
+          url: `/uploads/products/${imageMap[img]}`,
         });
       }
     }
 
-    res.json({
-      message: "Bulk upload completed",
-      errors,
-    });
+    if (imagesArray.length === 0) {
+      imagesArray.push({
+        url: "/uploads/products/default.png",
+      });
+    }
+
+    // ---------- CHECK PRODUCT ----------
+    const [existingProduct] = await db.query(
+      `SELECT id
+       FROM products
+       WHERE name=? AND category_id=?`,
+      [productName, category_id]
+    );
+
+    let productId;
+
+    if (!existingProduct.length) {
+
+      const [productResult] = await db.query(
+        `
+        INSERT INTO products
+        (
+          name,
+          category_id,
+          subcategory_id,
+          brand,
+          description,
+          highlights,
+          tags,
+          return_policy,
+          images,
+          active,
+          status
+        )
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          productName,
+          category_id,
+          subcategory_id,
+          p["Brand"] || "",
+          p["Description"] || "",
+          p["Highlights"] || "",
+          p["Tags"] || "",
+          p["Return Policy"] || "",
+          JSON.stringify(imagesArray),
+          Number(p["Active"]) || 1,
+          p["Status"] || "ACTIVE",
+        ]
+      );
+
+      productId = productResult.insertId;
+
+      console.log("✅ Product Created:", productName);
+
+    } else {
+
+      productId = existingProduct[0].id;
+
+      console.log("ℹ️ Product Already Exists:", productName);
+
+    }
+
+    productMap[productName.trim()] = productId;
 
   } catch (err) {
-    console.error("BULK UPLOAD ERROR:", err);
-    res.status(500).json({ message: err.message });
+
+    console.error(err);
+
+    errors.push({
+      sheet: "Products",
+      product: p["Product Name"],
+      error: err.message,
+    });
+
   }
+}
+
+
+
+
+
+// ===================================================
+// INSERT VARIANTS
+// ===================================================
+
+for (const v of variants) {
+  try {
+
+    const productName = String(v["Product Name"]).trim();
+
+    const productId = productMap[productName];
+
+    if (!productId) {
+      throw new Error(
+        `Product '${productName}' not found in Products sheet`
+      );
+    }
+
+    const variantLabel = String(v["Variant Label"]).trim();
+
+    const quantity = Number(v["Quantity"]) || 0;
+
+    const unit = String(v["Unit"]).trim().toLowerCase();
+
+    const price = Number(v["Price"]) || 0;
+
+    const mrp = Number(v["MRP"]) || 0;
+
+    const stock = Number(v["Stock"]) || 0;
+
+    const sku = v["SKU"] || "";
+
+    const freeDelivery =
+      Number(v["Free Delivery"]) === 1 ? 1 : 0;
+
+    const todayDeal =
+      Number(v["Today Deal"]) === 1 ? 1 : 0;
+
+    // ---------------- EXISTING VARIANT ----------------
+
+    const [existingVariant] = await db.query(
+      `
+      SELECT id
+      FROM product_variants
+      WHERE product_id=?
+      AND variant_label=?
+      `,
+      [productId, variantLabel]
+    );
+
+    let variantId;
+
+    if (!existingVariant.length) {
+
+      const [variantResult] = await db.query(
+        `
+        INSERT INTO product_variants
+        (
+          product_id,
+          variant_label,
+          price,
+          mrp,
+          sku,
+          stock,
+          is_free_delivery,
+          is_today_deal,
+          quantity,
+          unit
+        )
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          productId,
+          variantLabel,
+          price,
+          mrp,
+          sku,
+          stock,
+          freeDelivery,
+          todayDeal,
+          quantity,
+          unit
+        ]
+      );
+
+      variantId = variantResult.insertId;
+
+      console.log(
+        `✅ Variant Created: ${productName} - ${variantLabel}`
+      );
+
+    } else {
+
+      variantId = existingVariant[0].id;
+
+      await db.query(
+        `
+        UPDATE product_variants
+        SET
+        price=?,
+        mrp=?,
+        sku=?,
+        stock=?,
+        is_free_delivery=?,
+        is_today_deal=?,
+        quantity=?,
+        unit=?
+        WHERE id=?
+        `,
+        [
+          price,
+          mrp,
+          sku,
+          stock,
+          freeDelivery,
+          todayDeal,
+          quantity,
+          unit,
+          variantId
+        ]
+      );
+
+      console.log(
+        `♻️ Variant Updated: ${productName} - ${variantLabel}`
+      );
+
+    }
+
+    // ---------------- PRICE HISTORY ----------------
+
+    const [lastPrice] = await db.query(
+      `
+      SELECT selling_price
+      FROM product_prices
+      WHERE variant_id=?
+      ORDER BY created_at DESC
+      LIMIT 1
+      `,
+      [variantId]
+    );
+
+    if (
+      !lastPrice.length ||
+      Number(lastPrice[0].selling_price) !== price
+    ) {
+
+      await db.query(
+        `
+        INSERT INTO product_prices
+        (
+          variant_id,
+          selling_price,
+          mrp,
+          created_at
+        )
+        VALUES
+        (?, ?, ?, NOW())
+        `,
+        [
+          variantId,
+          price,
+          mrp
+        ]
+      );
+
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    errors.push({
+      sheet: "Product_Variants",
+      product: v["Product Name"],
+      variant: v["Variant Label"],
+      error: err.message,
+    });
+
+  }
+}
+        
+console.log("Bulk Upload Finished");
+console.log("Errors:", errors);
+
+res.json({
+  success: errors.length === 0,
+  message: "Bulk upload completed",
+  productsProcessed: Object.keys(productMap).length,
+  variantsProcessed: variants.length,
+  errors,
+});
+
+} catch (err) {
+  console.error("BULK UPLOAD ERROR:", err);
+  res.status(500).json({
+    message: err.message,
+  });
+}
 };
+
 export const updateProductPrice = async (req, res) => {
   try {
     const { variant_id, price, mrp } = req.body;

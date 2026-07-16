@@ -8,7 +8,7 @@ export default function AddressSection({ onClose, onSelect }) {
   const [editData, setEditData] = useState(null);
 
   const token = localStorage.getItem("token");
-
+console.log("Token:", token);
   /* ================= LOAD ADDRESSES ================= */
   const loadAddresses = async () => {
     try {

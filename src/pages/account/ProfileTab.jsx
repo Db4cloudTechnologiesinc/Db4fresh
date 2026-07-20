@@ -17,42 +17,48 @@ export default function ProfileTab() {
   const token = user?.token || localStorage.getItem("token");
 
   useEffect(() => {
+  const fetchProfile = async () => {
     if (!token) {
       setLoading(false);
       return;
     }
 
-    fetch("http://localhost:4000/api/users/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        if (res.status === 401) {
-          // token expired / invalid
-          console.warn("Unauthorized: redirecting to login");
-          localStorage.clear();
-          navigate("/auth");
-          return null;
+    try {
+      const res = await fetch(
+        "http://localhost:4000/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-        return res.json();
-      })
-      .then((data) => {
-        if (!data) return;
+      );
 
-        // ✅ ENSURE ALL FIELDS EXIST
-        setProfile({
-          name: data.name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Profile fetch error:", err);
-        setLoading(false);
+      if (res.status === 401) {
+        localStorage.clear();
+        navigate("/auth");
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const data = await res.json();
+
+      setProfile({
+        name: data.name || "",
+        email: data.email || "",
+        phone: data.phone || "",
       });
-  }, [token, navigate]);
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProfile();
+}, [token, navigate]);
 
   const updateProfile = async () => {
     if (!token) return;

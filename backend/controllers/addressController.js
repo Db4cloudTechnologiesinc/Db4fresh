@@ -10,7 +10,7 @@ export const addAddress = (req, res) => {
     INSERT INTO user_addresses
     (user_id, name, phone, address_line2, landmark, city, state, pincode, is_default)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;z
+  `;
 
   const values = [
     userId,

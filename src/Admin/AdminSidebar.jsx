@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   Users,
   Settings,
+  LifeBuoy,
 } from "lucide-react";
 
 const Item = ({ to, label, icon: Icon, active }) => (
@@ -78,6 +79,13 @@ export default function AdminSidebar() {
           icon={Settings}
           active={pathname.startsWith("/admin/settings")}
         />
+
+        <Item
+  to="/admin/support"
+  label="Support Requests"
+  icon={LifeBuoy}
+  active={pathname.startsWith("/admin/support")}
+/>
       </nav>
     </aside>
   );

@@ -2,12 +2,16 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
+import { setCart } from "../features/cart/cartSlice";
+
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { t } = useTranslation();
 
   const API = "http://localhost:4000/api/auth";
@@ -68,7 +72,20 @@ export default function Auth() {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/");
+      dispatch(setCart(res.data.cart || []));
+      const savedCart = localStorage.getItem("savedCart");
+
+console.log("savedCart =", savedCart);
+
+if (savedCart) {
+  localStorage.setItem("cart", savedCart);
+
+  dispatch(setCart(JSON.parse(savedCart)));
+
+  localStorage.removeItem("savedCart");
+}
+
+navigate("/");
     } else {
       /* 📝 SIGNUP */
       await axios.post(`${API}/signup`, {

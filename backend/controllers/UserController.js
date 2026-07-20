@@ -3,23 +3,36 @@ import db from "../config/db.js";
 /* =========================
    GET USER PROFILE
 ========================= */
-export const getProfile = (req, res) => {
-  const userId = req.user.id;
+export const getProfile = async (req, res) => {
+  try {
+    console.log("GET PROFILE API CALLED");
 
-  db.query(
-    "SELECT id, name, email ,phone FROM users WHERE id = ?",
-    [userId],
-    (err, rows) => {
-      if (err) return res.status(500).json(err);
+    const userId = req.user.id;
 
-      if (rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
+    const [rows] = await db.query(
+      "SELECT id, name, email, phone FROM users WHERE id = ?",
+      [userId]
+    );
 
-      res.json(rows[0]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
-  );
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Profile Error:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
+
+/* =========================
+   GET ALL USERS
+========================= */
 export const getAllUsers = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -43,6 +56,10 @@ export const getAllUsers = async (req, res) => {
     });
   }
 };
+
+/* =========================
+   SEARCH USERS
+========================= */
 export const searchUsers = async (req, res) => {
   try {
     const { query } = req.params;
@@ -60,26 +77,40 @@ export const searchUsers = async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
 /* =========================
    UPDATE USER PROFILE
 ========================= */
-export const updateProfile = (req, res) => {
-  const userId = req.user.id;
-  const { name, phone } = req.body;
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, phone } = req.body;
 
-  db.query(
-    "UPDATE users SET name = ?, phone = ? WHERE id = ?",
-    [name, phone, userId],
-    (err) => {
-      if (err) return res.status(500).json(err);
-      res.json({ message: "Profile updated successfully" });
-    }
-  );
+    await db.query(
+      "UPDATE users SET name = ?, phone = ? WHERE id = ?",
+      [name, phone, userId]
+    );
+
+    res.json({
+      message: "Profile updated successfully",
+    });
+  } catch (err) {
+    console.error("Update Profile Error:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
+
+/* =========================
+   GET USER BY ID
+========================= */
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -114,11 +145,13 @@ export const getUserById = async (req, res) => {
   }
 };
 
+/* =========================
+   GET USER DETAILS
+========================= */
 export const getUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // User
     const [users] = await db.query(
       `
       SELECT id, name, email, phone, created_at
@@ -134,7 +167,6 @@ export const getUserDetails = async (req, res) => {
       });
     }
 
-    // Orders
     const [orders] = await db.query(
       `
       SELECT *
@@ -145,7 +177,6 @@ export const getUserDetails = async (req, res) => {
       [id]
     );
 
-    // Addresses
     const [addresses] = await db.query(
       `
       SELECT *
@@ -163,9 +194,7 @@ export const getUserDetails = async (req, res) => {
     );
 
     const lastOrderDate =
-      orders.length > 0
-        ? orders[0].created_at
-        : null;
+      orders.length > 0 ? orders[0].created_at : null;
 
     res.json({
       user: users[0],
@@ -185,73 +214,77 @@ export const getUserDetails = async (req, res) => {
     });
   }
 };
+
 /* =========================
    DELETE USER ACCOUNT
 ========================= */
-export const deleteAccount = (req, res) => {
-  const userId = req.user.id;
+export const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-  // 1️⃣ Delete dependent data first (IMPORTANT)
-  db.query("DELETE FROM orders WHERE user_id = ?", [userId]);
-  db.query("DELETE FROM user_addresses WHERE user_id = ?", [userId]);
-  db.query("DELETE FROM wishlist WHERE user_id = ?", [userId]);
-  db.query("DELETE FROM cart WHERE user_id = ?", [userId]);
+    await db.query(
+      "DELETE FROM orders WHERE user_id = ?",
+      [userId]
+    );
 
-  // 2️⃣ Delete user
-  db.query(
-    "DELETE FROM users WHERE id = ?",
-    [userId],
-    (err) => {
-      if (err) return res.status(500).json(err);
+    await db.query(
+      "DELETE FROM user_addresses WHERE user_id = ?",
+      [userId]
+    );
 
-      res.json({ message: "Account deleted successfully" });
-    }
-  );
+    await db.query(
+      "DELETE FROM wishlist WHERE user_id = ?",
+      [userId]
+    );
+
+    await db.query(
+      "DELETE FROM cart WHERE user_id = ?",
+      [userId]
+    );
+
+    await db.query(
+      "DELETE FROM users WHERE id = ?",
+      [userId]
+    );
+
+    res.json({
+      message: "Account deleted successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
 
-export const deactivateAccount = (req, res) => {
-  const userId = req.user.id;
+/* =========================
+   DEACTIVATE ACCOUNT
+========================= */
+export const deactivateAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-  db.query(
-    `
-    UPDATE users 
-    SET is_active = 0, deleted_at = NOW()
-    WHERE id = ?
-    `,
-    [userId],
-    (err) => {
-      if (err) return res.status(500).json(err);
+    await db.query(
+      `
+      UPDATE users
+      SET is_active = 0,
+          deleted_at = NOW()
+      WHERE id = ?
+      `,
+      [userId]
+    );
 
-      res.json({
-        message:
-          "Your account has been deactivated. You can restore it within 7 days by logging in again.",
-      });
-    }
-  );
+    res.json({
+      message:
+        "Your account has been deactivated. You can restore it within 7 days by logging in again.",
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
-// export const searchUsers = (req, res) => {
-//   const { query } = req.params;
-
-//   db.query(
-//     `
-//     SELECT id, name, email
-//     FROM users
-//     WHERE
-//       name LIKE ?
-//       OR CAST(id AS CHAR) LIKE ?
-//     LIMIT 10
-//     `,
-//     [`%${query}%`, `%${query}%`],
-//     (err, rows) => {
-//       if (err) {
-//         console.error(err);
-//         return res.status(500).json({
-//           message: "Failed to search users",
-//         });
-//       }
-
-//       res.json(rows);
-//     }
-//   );
-// };
-// //export { getProfile, updateProfile , deleteAccount };

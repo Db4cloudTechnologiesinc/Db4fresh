@@ -38,22 +38,39 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    if (!token) {
-      alert("Please login first");
-      return;
-    }
+  if (!token) {
+    alert("Please login first");
+    return;
+  }
 
-    if (!form.address_line1 || form.pincode.length !== 6) {
-      alert("Address & valid pincode required");
-      return;
-    }
+  if (!form.address_line1 || form.pincode.length !== 6) {
+    alert("Address & valid pincode required");
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await axios.post(
+    let res;
+
+    if (editData && editData.id) {
+      // UPDATE EXISTING ADDRESS
+      res = await axios.put(
+        `http://localhost:4000/api/addresses/${editData.id}`,
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 8000,
+        }
+      );
+    } else {
+      // CREATE NEW ADDRESS
+      res = await axios.post(
         "http://localhost:4000/api/addresses",
         form,
         {
@@ -64,19 +81,20 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
           timeout: 8000,
         }
       );
-
-      onSave(res.data);
-      onClose();
-    } catch (err) {
-      console.error("Address Save Error:", err.response?.data || err.message);
-      alert(
-        err.response?.data?.message ||
-        "Failed to save address. Please login again."
-      );
-    } finally {
-      setLoading(false);
     }
-  };
+
+    onSave(res.data);
+    onClose();
+  } catch (err) {
+    console.error("Address Save Error:", err.response?.data || err.message);
+    alert(
+      err.response?.data?.message ||
+      "Failed to save address. Please login again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleChange = (key, value) => {
     setForm((prev) => ({
@@ -88,7 +106,9 @@ export default function AddressModal({ isOpen, onClose, onSave, editData }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Add New Address</h2>
+        <h2 className="text-xl font-bold mb-4">
+  {editData ? "Edit Address" : "Add New Address"}
+</h2>
 
         {[
           ["Name", "name"],

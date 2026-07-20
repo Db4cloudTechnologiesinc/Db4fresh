@@ -2,6 +2,30 @@ import { useEffect, useState } from "react";
 
 export default function SupportTab() {
   const [tickets, setTickets] = useState([]);
+  const [openFAQ, setOpenFAQ] = useState(null);
+
+const faqs = [
+  {
+    question: "How to cancel an order?",
+    answer:
+      "You can cancel your order before it is packed. Go to My Orders, select the order, and click Cancel Order.",
+  },
+  {
+    question: "How do refunds work?",
+    answer:
+      "Approved refunds are credited back to your original payment method within 5–7 business days.",
+  },
+  {
+    question: "Wallet & reward points usage",
+    answer:
+      "Wallet balance and reward points are automatically applied during checkout if available.",
+  },
+  {
+    question: "Payment issues",
+    answer:
+      "If your payment fails or money is deducted without order confirmation, contact support with your transaction ID.",
+  },
+];
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     category: "ORDER",
@@ -101,14 +125,35 @@ export default function SupportTab() {
 
       {/* FAQs */}
       <div className="mb-6 bg-gray-50 p-4 rounded">
-        <h4 className="font-semibold mb-2">FAQs</h4>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• How to cancel an order?</li>
-          <li>• How do refunds work?</li>
-          <li>• Wallet & reward points usage</li>
-          <li>• Payment issues</li>
-        </ul>
-      </div>
+  <h4 className="font-semibold mb-3">FAQs</h4>
+
+  {faqs.map((faq, index) => (
+    <div
+      key={index}
+      className="border-b last:border-b-0 py-2"
+    >
+      <button
+        type="button"
+        onClick={() =>
+          setOpenFAQ(openFAQ === index ? null : index)
+        }
+        className="w-full flex justify-between items-center text-left font-medium"
+      >
+        <span>{faq.question}</span>
+
+        <span className="text-xl">
+          {openFAQ === index ? "−" : "+"}
+        </span>
+      </button>
+
+      {openFAQ === index && (
+        <p className="mt-2 text-sm text-gray-600">
+          {faq.answer}
+        </p>
+      )}
+    </div>
+  ))}
+</div>
 
       {/* CREATE TICKET */}
       <form onSubmit={submitTicket} className="space-y-3 max-w-md">

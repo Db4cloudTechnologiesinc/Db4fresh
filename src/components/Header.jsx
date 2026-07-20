@@ -2,7 +2,7 @@
 import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import LocationModal from "./LocationModal";
 import SearchSuggestions from "./SearchSuggestions";
 import db4freshlogo from "../Assets/Db4freshlogo.png";
@@ -10,8 +10,10 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaHeart } from "react-icons/fa";
 import { FiHome } from "react-icons/fi";
 import Fuse from "fuse.js";
+import { resetCartState } from "../features/cart/cartSlice";
 
 export default function Header() {
+  const dispatch = useDispatch();
 
   const [locOpen, setLocOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -299,12 +301,24 @@ useEffect(() => {
 
                      <button
   onClick={() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    // Don't remove cart
+  // Save cart temporarily
+  const cart = localStorage.getItem("cart");
 
-    window.location.href = "/login";
-  }}
+  if (cart) {
+    localStorage.setItem("savedCart", cart);
+  }
+
+  // Remove visible cart
+  localStorage.removeItem("cart");
+
+  // Logout
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  dispatch(resetCartState());
+
+  window.location.href = "/";
+}}
   className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
 >
   Logout

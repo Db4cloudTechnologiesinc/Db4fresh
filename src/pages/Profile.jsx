@@ -1,54 +1,100 @@
 import { useEffect, useState } from "react";
 
 export default function Profile() {
-  const [user, setUser] = useState({ name: "", email: "", phone: "" });
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+
   const [loading, setLoading] = useState(true);
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetch("http://localhost:4000/api/users/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:4000/api/users/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const data = await res.json();
         setUser(data);
+      } catch (err) {
+        console.error("Profile Error:", err);
+      } finally {
+        // Always stop loading
         setLoading(false);
-      });
-  }, []);
+      }
+    };
+
+    fetchProfile();
+  }, [token]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:4000/api/users/profile", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        name: user.name,
-        phone: user.phone,
-      }),
-    });
+    try {
+      const res = await fetch(
+        "http://localhost:4000/api/users/profile",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: user.name,
+            phone: user.phone,
+          }),
+        }
+      );
 
-    const data = await res.json();
-    alert(data.message);
+      const data = await res.json();
+
+      alert(data.message);
+    } catch (err) {
+      console.error(err);
+      alert("Unable to update profile.");
+    }
   };
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) {
+    return (
+      <div className="text-center p-8">
+        Loading profile...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">My Profile</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        My Profile
+      </h2>
 
-      <form onSubmit={handleUpdate} className="space-y-4">
+      <form
+        onSubmit={handleUpdate}
+        className="space-y-4"
+      >
         <input
           className="w-full border p-2 rounded"
           value={user.name}
-          onChange={(e) => setUser({ ...user, name: e.target.value })}
+          onChange={(e) =>
+            setUser({
+              ...user,
+              name: e.target.value,
+            })
+          }
           placeholder="Name"
         />
 
@@ -61,7 +107,12 @@ export default function Profile() {
         <input
           className="w-full border p-2 rounded"
           value={user.phone || ""}
-          onChange={(e) => setUser({ ...user, phone: e.target.value })}
+          onChange={(e) =>
+            setUser({
+              ...user,
+              phone: e.target.value,
+            })
+          }
           placeholder="Phone"
         />
 

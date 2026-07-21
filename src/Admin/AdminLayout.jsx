@@ -140,6 +140,13 @@ export default function AdminLayout() {
             active={isActive("/admin/add-admin")}
           />
 
+          <SidebarItem
+  to="/admin/support"
+  icon={<FiUsers />}
+  label="Support Requests"
+  active={isActive("/admin/support")}
+/>
+
         </nav>
       </aside>
 

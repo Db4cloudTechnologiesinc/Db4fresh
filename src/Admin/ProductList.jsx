@@ -324,7 +324,7 @@ const fetchProducts = async () => {
     const data = await res.json();
   
 
-    console.log("ADMIN PRODUCTS:", data); // 🔥 DEBUG
+    console.log(data[0]);// 🔥 DEBUG
 
     setProducts(data || []);
     setFiltered(data || []);
@@ -508,6 +508,8 @@ if (filter === "lowstock") {
               <th className="p-3">#</th>
               <th className="p-3">Image</th>
               <th className="p-3">Name</th>
+              <th className="p-3">Category</th>
+              <th className="p-3">Subcategory</th>
               <th className="p-3">Brand</th>
               <th className="p-3">Price</th>
               <th className="p-3">Stock</th>
@@ -557,11 +559,22 @@ if (filter === "lowstock") {
                 
 
                 <td className="p-3 font-medium">{p.name}</td>
-                <td className="p-3">{p.brand || "-"}</td>
 
-                <td className="p-3 text-green-600 font-semibold">
-                  ₹{p.price}
-                </td>
+<td className="p-3">
+  {p.category_name || "-"}
+</td>
+
+<td className="p-3">
+  {p.subcategory_name || "-"}
+</td>
+
+<td className="p-3">
+  {p.brand || "-"}
+</td>
+
+<td className="p-3 text-green-600 font-semibold">
+  ₹{p.price}
+</td>
 
                 <td className="p-3">{p.stock}</td>
 
@@ -610,7 +623,7 @@ if (filter === "lowstock") {
 
             {filtered.length === 0 && (
               <tr>
-                <td colSpan="7" className="p-6 text-center text-gray-500">
+                <td colSpan="10" className="p-6 text-center text-gray-500">
                   No products found
                 </td>
 

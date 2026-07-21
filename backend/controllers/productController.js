@@ -374,26 +374,38 @@ export const getAdminProducts = async (req, res) => {
   try {
     const [rows] = await db.query(
       `
-      SELECT p.*,
+      SELECT
+p.*,
 
-      (
-        SELECT v.variant_label
-        FROM product_variants v
-        WHERE v.product_id = p.id
-        ORDER BY v.price ASC
-        LIMIT 1
-      ) AS variant_label,
+c.name AS category_name,
 
-      ${PRICE_QUERY}
+s.name AS subcategory_name,
 
-      (
-        SELECT SUM(v.stock)
-        FROM product_variants v
-        WHERE v.product_id = p.id
-      ) AS stock
+(
+  SELECT v.variant_label
+  FROM product_variants v
+  WHERE v.product_id = p.id
+  ORDER BY v.price ASC
+  LIMIT 1
+) AS variant_label,
 
-      FROM products p
-      ORDER BY p.id DESC
+${PRICE_QUERY}
+
+(
+  SELECT SUM(v.stock)
+  FROM product_variants v
+  WHERE v.product_id = p.id
+) AS stock
+
+FROM products p
+
+LEFT JOIN categories c
+ON p.category_id = c.id
+
+LEFT JOIN subcategories s
+ON p.subcategory_id = s.id
+
+ORDER BY p.id DESC
       `
     );
 

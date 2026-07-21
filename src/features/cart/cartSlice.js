@@ -113,6 +113,9 @@ Number(item.variantId || 0)
     state.items = [];
     localStorage.removeItem("cart");
   },
+  resetCartState: (state) => {
+  state.items = [];
+},
 },
 });
 
@@ -123,6 +126,7 @@ export const {
   decreaseQty,
   removeFromCart,
   clearCart,
+  resetCartState,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

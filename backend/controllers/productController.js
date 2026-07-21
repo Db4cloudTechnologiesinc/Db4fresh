@@ -1,5 +1,12 @@
 import db from "../config/db.js";
  import XLSX from "xlsx";
+ import axios from "axios";
+import fs from "fs-extra";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /* ================= COMMON PRICE QUERY ================= */
 const PRICE_QUERY = `
@@ -1330,27 +1337,33 @@ for (const p of products) {
       }
     }
 
-    // ---------- IMAGE ----------
-    let imagesArray = [];
+// ---------- IMAGE ----------
+let imagesArray = [];
 
-    if (p["Image URL"]) {
-      const img = String(p["Image URL"]).trim();
+// If image URL or uploaded image exists
+if (p["Image URL"]) {
+  const img = String(p["Image URL"]).trim();
 
-      if (img.startsWith("http")) {
-        imagesArray.push({ url: img });
-      } else if (imageMap[img]) {
-        imagesArray.push({
-          url: `/uploads/products/${imageMap[img]}`,
-        });
-      }
-    }
+  // External image URL
+  if (img.startsWith("http")) {
+    imagesArray.push({
+      url: img,
+    });
+  }
+  // Uploaded image file
+  else if (imageMap[img]) {
+    imagesArray.push({
+      url: `/uploads/products/${imageMap[img]}`,
+    });
+  }
+}
 
-    if (imagesArray.length === 0) {
-      imagesArray.push({
-        url: "/uploads/products/default.png",
-      });
-    }
-
+// If no image is provided, use default image
+if (imagesArray.length === 0) {
+  imagesArray.push({
+    url: "/uploads/products/default.png",
+  });
+}
     // ---------- CHECK PRODUCT ----------
     const [existingProduct] = await db.query(
       `SELECT id

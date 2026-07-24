@@ -312,14 +312,57 @@ export const getOrderById = async (req, res) => {
     });
   }
 };
+// export const updateOrderStatus = async (req, res) => {
+//   try {
+//     const { status } = req.body;
+
+//     await db.query(
+//       "UPDATE orders SET order_status=? WHERE id=?",
+//       [status, req.params.id]
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Status updated successfully",
+//     });
+//   } catch (err) {
+//     console.error(err);
+
+//     res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    const orderId = req.params.id;
 
+    // Update order status
     await db.query(
       "UPDATE orders SET order_status=? WHERE id=?",
-      [status, req.params.id]
+      [status, orderId]
     );
+     // Hide notification when admin confirms the order
+if (status === "CONFIRMED") {
+  await db.query(
+    `UPDATE notifications
+     SET is_read = 1
+     WHERE order_id = ?`,
+    [req.params.id]
+  );
+}
+    // // Remove notification when order is confirmed
+    // if (status === "CONFIRMED") {
+    //   await db.query(
+    //     `
+    //     UPDATE notifications
+    //     SET is_read = 1
+    //     WHERE JSON_EXTRACT(message, '$.orderId') = ?
+    //     `,
+    //     [orderId]
+    //   );
+    // }
 
     res.json({
       success: true,

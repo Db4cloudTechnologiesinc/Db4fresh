@@ -62,21 +62,24 @@ function BannerPage() {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-6">
-        {type.replace("-", " ").toUpperCase()}
-      </h2>
+      <h2 className="text-2xl font-bold">
+  {type.replace("-", " ").toUpperCase()}
+</h2>
 
-      {type === "offer-zone" ? (
+<p className="text-gray-500 mb-6">
+  {products.length} Product{products.length !== 1 ? "s" : ""} Found
+</p>
 
-  <div className="flex flex-wrap gap-4">
+      {products.length === 0 ? (
 
-    {products.map((product) => (
-      <ProductCard
-        key={product.id}
-        p={product}
-      />
-    ))}
+  <div className="w-full flex flex-col items-center justify-center py-20">
+    <h2 className="text-2xl font-bold text-gray-700">
+      No Products Available
+    </h2>
 
+    <p className="text-gray-500 mt-2">
+      Please check back later for exciting offers.
+    </p>
   </div>
 
 ) : (

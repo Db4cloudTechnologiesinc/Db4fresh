@@ -285,16 +285,23 @@ export const getAdminNotifications = async (req, res) => {
 
 export const markNotificationsRead = async (req, res) => {
   try {
-    await db.query(`
+    const { id } = req.params;
+
+    await db.query(
+      `
       UPDATE notifications
       SET is_read = TRUE
-      WHERE is_read = FALSE
-    `);
+      WHERE id = ?
+      `,
+      [id]
+    );
 
     res.json({
       success: true,
     });
   } catch (err) {
+    console.error(err);
+
     res.status(500).json({
       message: err.message,
     });

@@ -24,24 +24,6 @@ export default function Dashboard() {
 ).length;
 const handleBellClick = async () => {
   setShowBox(!showBox);
-
-  try {
-    await fetch(
-      "http://localhost:4000/api/admin/notifications/read",
-      {
-        method: "PUT",
-      }
-    );
-
-    setNotifications((prev) =>
-      prev.map((n) => ({
-        ...n,
-        is_read: true,
-      }))
-    );
-  } catch (err) {
-    console.error(err);
-  }
 };
 
 const loadNotifications = async () => {
@@ -129,10 +111,18 @@ const loadNotifications = async () => {
 }, [navigate]);
 
   if (loading) {
-    return <div className="p-6 text-gray-600">Loading dashboard...</div>;
-  }
+  return <div className="p-6 text-gray-600">Loading dashboard...</div>;
+}
 
-  return (
+const unreadNotifications = notifications.filter(
+  (n) => !n.is_read
+);
+
+const readNotifications = notifications.filter(
+  (n) => n.is_read
+);
+
+return (
     <div className="p-6 relative">
      {/* 🔔 NOTIFICATION ICON */}
 <div className="fixed top-6 right-6 z-50">
@@ -156,12 +146,82 @@ const loadNotifications = async () => {
         Notifications
       </h4>
 
-      {notifications.length === 0 ? (
-        <p className="text-gray-500 text-sm">
-          No notifications
-        </p>
-      ) : (
-        notifications.map((n, i) => {
+      {unreadNotifications.length === 0 &&
+readNotifications.length === 0 ? (
+  <p className="text-gray-500 text-sm">
+    No notifications
+  </p>
+) : (
+  <>
+    {/* UNREAD */}
+    {unreadNotifications.map((n, i) => {
+      let details = {};
+
+      try {
+        details =
+          typeof n.message === "string"
+            ? JSON.parse(n.message)
+            : n.message;
+      } catch {
+        details = {};
+      }
+
+      return (
+        <div
+          key={i}
+          onClick={async () => {
+            try {
+              await fetch(
+                `http://localhost:4000/api/admin/notifications/read/${n.id}`,
+                {
+                  method: "PUT",
+                }
+              );
+
+              setNotifications((prev) =>
+                prev.map((item) =>
+                  item.id === n.id
+                    ? { ...item, is_read: true }
+                    : item
+                )
+              );
+
+              if (details.orderId) {
+                navigate(`/admin/orders/${details.orderId}`);
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          className="border-b py-3 text-sm cursor-pointer hover:bg-gray-100 rounded"
+        >
+          <p className="font-semibold">
+            🛒 Order #{details.orderId || "N/A"}
+          </p>
+
+          <p>👤 User #{details.userId || "N/A"}</p>
+
+          <p>💰 ₹{details.totalAmount || 0}</p>
+
+          <p>💳 {details.paymentMethod || "-"}</p>
+
+          <p className="text-xs text-gray-400 mt-1">
+            {n.created_at}
+          </p>
+        </div>
+      );
+    })}
+
+    {/* READ */}
+    {readNotifications.length > 0 && (
+      <>
+        <hr className="my-3" />
+
+        <h5 className="text-xs font-bold text-gray-500 uppercase mb-2">
+          Read Notifications
+        </h5>
+
+        {readNotifications.map((n, i) => {
           let details = {};
 
           try {
@@ -175,39 +235,40 @@ const loadNotifications = async () => {
 
           return (
             <div
-              key={i}
-              onClick={() => {
-                if (details.orderId) {
-                  navigate(
-                    `/admin/orders/${details.orderId}`
-                  );
-                }
-              }}
-              className="border-b py-3 text-sm cursor-pointer hover:bg-gray-100 rounded"
+              key={`read-${i}`}
+              className="border-b py-3 text-sm opacity-60"
             >
               <p className="font-semibold">
                 🛒 Order #{details.orderId || "N/A"}
               </p>
 
-              <p>
-                👤 User #{details.userId || "N/A"}
-              </p>
+              <p>👤 User #{details.userId || "N/A"}</p>
 
-              <p>
-                💰 ₹{details.totalAmount || 0}
-              </p>
+              <p>💰 ₹{details.totalAmount || 0}</p>
 
-              <p>
-                💳 {details.paymentMethod || "-"}
-              </p>
+              <p>💳 {details.paymentMethod || "-"}</p>
 
               <p className="text-xs text-gray-400 mt-1">
-                {n.created_at}
-              </p>
+  {n.created_at}
+</p>
+
+<button
+  onClick={() => {
+    if (details.orderId) {
+      navigate(`/admin/orders/${details.orderId}`);
+    }
+  }}
+  className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+>
+  View Details
+</button>
             </div>
           );
-        })
-      )}
+        })}
+      </>
+    )}
+  </>
+)}
     </div>
   )}
 </div>

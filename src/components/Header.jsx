@@ -25,6 +25,7 @@ export default function Header() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = user?.token || localStorage.getItem("token");
+  const adminToken = localStorage.getItem("adminToken");
 
   /* ================= CLOSE MENU ================= */
 
@@ -276,15 +277,15 @@ useEffect(() => {
 
                 <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg z-50">
 
-                  {user ? (
+                  {user || adminToken ? (
                     <>
 
                       <p className="px-4 py-2 text-xs text-gray-500">
-                        Hi, {user.name}
-                      </p>
+  Hi, {user?.name || "Admin"}
+</p>
 
                       <Link
-                        to="/orders"
+  to={adminToken ? "/admin/orders" : "/orders"}
                         className="block px-4 py-2 hover:bg-gray-100"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -292,7 +293,7 @@ useEffect(() => {
                       </Link>
 
                       <Link
-                        to="/profile"
+  to={adminToken ? "/admin/dashboard" : "/profile"}
                         className="block px-4 py-2 hover:bg-gray-100"
                         onClick={() => setMenuOpen(false)}
                       >
@@ -301,24 +302,26 @@ useEffect(() => {
 
                      <button
   onClick={() => {
-  // Save cart temporarily
-  const cart = localStorage.getItem("cart");
+    if (adminToken) {
+      localStorage.removeItem("adminToken");
+      window.location.href = "/admin/login";
+      return;
+    }
 
-  if (cart) {
-    localStorage.setItem("savedCart", cart);
-  }
+    const cart = localStorage.getItem("cart");
 
-  // Remove visible cart
-  localStorage.removeItem("cart");
+    if (cart) {
+      localStorage.setItem("savedCart", cart);
+    }
 
-  // Logout
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+    localStorage.removeItem("cart");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
-  dispatch(resetCartState());
+    dispatch(resetCartState());
 
-  window.location.href = "/";
-}}
+    window.location.href = "/";
+  }}
   className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
 >
   Logout

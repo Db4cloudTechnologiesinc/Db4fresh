@@ -5,6 +5,7 @@ import {
   increaseQty,
   decreaseQty,
   removeFromCart,
+  clearCart,
 } from "../features/cart/cartSlice";
 import { fetchProducts } from "../features/products/productSlice";
 import { Link, useNavigate } from "react-router-dom";
@@ -180,7 +181,26 @@ items.forEach((item) => {
 
           {/* ================= LEFT ================= */}
           <div className="md:col-span-2 space-y-4">
-            <h2 className="text-2xl font-semibold">My Cart</h2>
+            <div className="flex justify-between items-center mb-6">
+  <div>
+    <h2 className="text-2xl font-semibold">My Cart</h2>
+
+    <p className="text-sm text-gray-500 mt-1">
+      {items.length} Item{items.length !== 1 ? "s" : ""}
+    </p>
+  </div>
+
+  <button
+    onClick={() => {
+      if (window.confirm("Are you sure you want to clear your cart?")) {
+        dispatch(clearCart());
+      }
+    }}
+    className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition"
+  >
+    🗑 Clear Cart
+  </button>
+</div>
              {freeItems.length > 0 && (
   <div className="mb-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 shadow-sm">
     

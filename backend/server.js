@@ -120,17 +120,7 @@ app.get("/", (req, res) => {
  
 /* ================= ERROR HANDLER ================= */
 app.use(errorHandler);
-// // startConsumer();
-// // await connectProducer();
- 
-// /* ================= SERVER START ================= */
-// const PORT = process.env.PORT || 4000;
 
- 
-// app.listen(PORT, () => {
-//   console.log("🚀 Server running on port", PORT);
-//   console.log("📂 Serving uploads from:", path.join(__dirname, "uploads"));
-// });
  
 const PORT = process.env.PORT || 4000;
 

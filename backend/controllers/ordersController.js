@@ -359,7 +359,7 @@ if (status === "CONFIRMED") {
     //     UPDATE notifications
     //     SET is_read = 1
     //     WHERE JSON_EXTRACT(message, '$.orderId') = ?
-    //     `,
+    //     `,git add .
     //     [orderId]
     //   );
     // }

@@ -32,6 +32,7 @@ export default function ProductDetails() {
   const [zoom, setZoom] = useState(1);
   const [qty, setQty] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [shareMessage, setShareMessage] = useState("");
 
   const wishlist = useSelector((s) => s.wishlist.items);
   const touchStartX = useRef(0);
@@ -98,6 +99,38 @@ const discount =
     if (endX - touchStartX.current > 50) prevImage();
   };
 
+  const handleShare = async () => {
+  const shareData = {
+  title: `${product.name} - Db4Fresh`,
+  text: `Check out this product on Db4Fresh: ${product.name}`,
+  url: window.location.href,
+};
+
+  try {
+    // Mobile browsers & supported browsers
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+
+    // Desktop fallback
+    await navigator.clipboard.writeText(window.location.href);
+
+    setShareMessage("✅ Product link copied!");
+
+    setTimeout(() => {
+      setShareMessage("");
+    }, 2500);
+  } catch (err) {
+    console.error(err);
+    setShareMessage("❌ Unable to share the product.");
+
+    setTimeout(() => {
+      setShareMessage("");
+    }, 2500);
+  }
+};
+
   return (
     <>
       <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -144,17 +177,12 @@ const discount =
 
                 {/* SHARE */}
                 <button
-                  onClick={() =>
-                    navigator.share({
-                      title: product.name,
-                      text: product.description,
-                      url: window.location.href,
-                    })
-                  }
-                  className="bg-white p-2 rounded-full shadow"
-                >
-                  <FaShareAlt size={16} />
-                </button>
+  onClick={handleShare}
+  className="bg-white p-2 rounded-full shadow hover:bg-gray-100 transition"
+  title="Share Product"
+>
+  <FaShareAlt size={16} />
+</button>
 
                 {/* WISHLIST */}
                 <button
@@ -189,6 +217,11 @@ const discount =
                   )}
                 </button>
               </div>
+              {shareMessage && (
+  <div className="absolute top-16 right-4 bg-black text-white text-xs px-3 py-2 rounded-lg shadow-lg z-20">
+    {shareMessage}
+  </div>
+)}
 
               <img
                 src={mainImage}

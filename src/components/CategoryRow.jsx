@@ -1,8 +1,7 @@
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import ProductCard from "./ProductCard"; // ✅ IMPORTANT
+import { Link } from "react-router-dom";
+import ProductCard from "./ProductCard";
 
 const API_BASE = "http://localhost:4000";
 
@@ -28,29 +27,37 @@ export default function CategoryRow({ title, categoryId }) {
     fetchProducts();
   }, [categoryId]);
 
-  // ✅ Loading state
+  // Loading state
   if (loading) {
-    return <p className="mb-6">Loading {title}...</p>;
-  }
+  return <p className="mb-6">Loading {title}...</p>;
+}
 
-  // ✅ Optional: hide empty categories
+  // Hide empty categories
   if (!products.length) return null;
 
   return (
     <div className="mb-8">
 
-      <h2 className="text-xl font-semibold mb-3">
-        {title}
-      </h2>
+      {/* Heading + See All */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl font-semibold">
+          {title}
+        </h2>
+
+        <Link
+          to={`/category/${categoryId}`}
+          className="text-red-600 font-medium hover:underline"
+        >
+          See All →
+        </Link>
+      </div>
 
       <div className="flex gap-4 overflow-x-auto pb-2">
-              {products.map((p) => (
-                <div key={p.id} className="min-w-[220px]">
-                  <ProductCard p={p} />
-                </div>
-  ))}
-
-
+        {products.map((p) => (
+          <div key={p.id} className="min-w-[220px]">
+            <ProductCard p={p} />
+          </div>
+        ))}
       </div>
 
     </div>

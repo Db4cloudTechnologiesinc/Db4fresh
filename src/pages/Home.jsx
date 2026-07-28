@@ -166,8 +166,8 @@ export default function Home() {
         <div className="py-8">
  
           {loading ? (
-            <p>Loading...</p>
-          ) : (
+  <p>Loading...</p>
+) : (
             <>
               <TopPicks products={topPicks} />
  

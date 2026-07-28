@@ -23,7 +23,7 @@ router.get("/dashboard",  getDashboardStats);
 /* USERS */
 router.get("/users/:id/history", getUserHistory);
 router.get("/notifications", getAdminNotifications);
-router.put("/read", markNotificationsRead);
+router.put("/notifications/read/:id", markNotificationsRead);
 router.get("/products", getAdminProducts);
  
 /* REVENUE */

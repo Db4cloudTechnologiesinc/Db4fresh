@@ -143,40 +143,68 @@ router.get("/:type", async (req, res) => {
 
       /* 🔴 50% OFF */
        /* 🔴 50% OFF */
-    case "50-off":
+    /* 🔴 50% OFF */
+/* 🔴 50% OFF */
+/* 🔴 50% OFF */
+case "50-off":
   query = `
     SELECT
       p.*,
       c.name AS category_name,
+
       MIN(pv.price) AS price,
       COALESCE(SUM(pv.stock),0) AS stock,
-      MIN(pv.mrp) AS mrp
- 
+      MIN(pv.mrp) AS mrp,
+
+      ROUND(
+        ((MIN(pv.mrp) - MIN(pv.price)) / MIN(pv.mrp)) * 100
+      ) AS mrp_discount,
+
+      CASE
+        WHEN p.expiry_date IS NOT NULL
+          AND DATEDIFF(p.expiry_date, CURDATE()) <= 1 THEN 60
+        WHEN p.expiry_date IS NOT NULL
+          AND DATEDIFF(p.expiry_date, CURDATE()) <= 2 THEN 50
+        WHEN p.expiry_date IS NOT NULL
+          AND DATEDIFF(p.expiry_date, CURDATE()) <= 3 THEN 30
+        ELSE 0
+      END AS expiry_discount,
+
+      GREATEST(
+        ROUND(
+          ((MIN(pv.mrp) - MIN(pv.price)) / MIN(pv.mrp)) * 100
+        ),
+        CASE
+          WHEN p.expiry_date IS NOT NULL
+            AND DATEDIFF(p.expiry_date, CURDATE()) <= 1 THEN 60
+          WHEN p.expiry_date IS NOT NULL
+            AND DATEDIFF(p.expiry_date, CURDATE()) <= 2 THEN 50
+          WHEN p.expiry_date IS NOT NULL
+            AND DATEDIFF(p.expiry_date, CURDATE()) <= 3 THEN 30
+          ELSE 0
+        END
+      ) AS final_discount
+
     FROM products p
- 
+
     LEFT JOIN product_variants pv
       ON pv.product_id = p.id
- 
+
     LEFT JOIN categories c
       ON c.id = p.category_id
- 
-    WHERE c.name IN (
-      'Groceries',
-      'Dry Fruits & Nuts',
-      'Snacks',
-      'Home Care',
-      'Fashion',
-      'Beauty'
-    )
- 
+
+    WHERE
+      p.active = 1
+
     GROUP BY p.id
- 
-    HAVING stock >= 20
- 
-    ORDER BY stock DESC
+
+    HAVING
+      stock > 0
+      AND final_discount >= 50
+
+    ORDER BY final_discount DESC
   `;
   break;
-
       default:
         return res.status(400).json({ message: "Invalid banner type" });
     }

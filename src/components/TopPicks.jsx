@@ -31,13 +31,19 @@ export default function TopPicks({ products = [] }) {
 
       {/* HEADER */}
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Top Picks For You
-        </h2>
+        <div>
+  <h2 className="text-xl font-semibold text-gray-800">
+    Top Picks For You
+  </h2>
+
+  <p className="text-sm text-gray-500">
+    {products.length} Product{products.length !== 1 ? "s" : ""}
+  </p>
+</div>
       </div>
 
       {/* PRODUCTS ROW */}
-      <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
+      <div className="flex gap-5 overflow-x-auto pb-2">
 
         {products.map((p) => (
           <div

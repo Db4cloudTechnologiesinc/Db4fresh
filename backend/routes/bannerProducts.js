@@ -18,6 +18,7 @@ const baseQuery = `
     MIN(pv.price) AS price,
 SUM(pv.stock) AS stock,
     MIN(pv.mrp) AS mrp,
+MIN(pv.variant_label) AS variant_label,
 
     ROUND(
       ((MIN(pv.mrp) - MIN(pv.price)) / MIN(pv.mrp)) * 100
@@ -45,7 +46,9 @@ router.get("/:type", async (req, res) => {
       p.*,
       MIN(pv.price) AS price,
       SUM(pv.stock) AS stock,
-      MIN(pv.mrp) AS mrp
+      MIN(pv.mrp) AS mrp,
+MIN(pv.variant_label) AS variant_label,
+      MIN(pv.variant_label) AS variant_label
     FROM products p
     JOIN product_variants pv
       ON pv.product_id = p.id
@@ -69,6 +72,7 @@ router.get("/:type", async (req, res) => {
       MIN(pv.price) AS price,
       SUM(pv.stock) AS stock,
       MIN(pv.mrp) AS mrp,
+MIN(pv.variant_label) AS variant_label,
  
       c.name AS category_name,
  
@@ -155,6 +159,7 @@ case "50-off":
       MIN(pv.price) AS price,
       COALESCE(SUM(pv.stock),0) AS stock,
       MIN(pv.mrp) AS mrp,
+MIN(pv.variant_label) AS variant_label,
 
       ROUND(
         ((MIN(pv.mrp) - MIN(pv.price)) / MIN(pv.mrp)) * 100

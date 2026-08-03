@@ -1,0 +1,13 @@
+[1mdiff --git a/backend/.env b/backend/.env[m
+[1mindex bee26cd5..9a954436 100644[m
+[1m--- a/backend/.env[m
+[1m+++ b/backend/.env[m
+[36m@@ -5,7 +5,7 @@[m [mDB_HOST=localhost[m
+ DB_PORT=3306[m
+ DB_NAME=db4fresh[m
+ DB_USER=root[m
+[31m-DB_PASSWORD=Swetha@123[m
+[32m+[m[32mDB_PASSWORD=root123[m
+ JWT_SECRET=mysecret123[m
+ PORT=4000[m
+ PIXABAY_API_KEY=56721570-e19d532223e839b1eca83bf60[m

@@ -171,7 +171,7 @@
 //   );
 // }
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api";
 import AddressModal from "./AddressModal";
 
 export default function LocationModal({ isOpen, onClose, onSelect }) {
@@ -189,14 +189,7 @@ export default function LocationModal({ isOpen, onClose, onSelect }) {
     }
 
     try {
-      const res = await axios.get(
-        "http://localhost:4000/api/addresses",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.get("/addresses");
 
       const list = Array.isArray(res.data) ? res.data : [];
       setAddresses(list);
@@ -213,14 +206,7 @@ export default function LocationModal({ isOpen, onClose, onSelect }) {
     if (!window.confirm("Delete this address?")) return;
 
     try {
-      await axios.delete(
-        `http://localhost:4000/api/addresses/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.delete(`/addresses/${id}`);
 
       // remove instantly from UI
       setAddresses((prev) => prev.filter((a) => a.id !== id));

@@ -44,16 +44,25 @@ router.get("/:type", async (req, res) => {
   query = `
     SELECT
       p.*,
-      MIN(pv.price) AS price,
-      SUM(pv.stock) AS stock,
-      MIN(pv.mrp) AS mrp,
-MIN(pv.variant_label) AS variant_label,
-      MIN(pv.variant_label) AS variant_label
+      pv.id AS variant_id,
+      pv.variant_label,
+      pv.price,
+      pv.mrp,
+      pv.stock
+
     FROM products p
+
     JOIN product_variants pv
       ON pv.product_id = p.id
-    WHERE pv.is_free_delivery = 1
-    GROUP BY p.id
+
+    WHERE
+      pv.is_free_delivery = 1
+      AND pv.price = (
+        SELECT MIN(price)
+        FROM product_variants
+        WHERE product_id = p.id
+          AND is_free_delivery = 1
+      )
   `;
   break;
 
@@ -67,49 +76,32 @@ MIN(pv.variant_label) AS variant_label,
       p.brand,
       p.image,
       p.images,
-      p.expiry_date,
- 
+
       MIN(pv.price) AS price,
-      SUM(pv.stock) AS stock,
       MIN(pv.mrp) AS mrp,
-MIN(pv.variant_label) AS variant_label,
- 
-      c.name AS category_name,
- 
-      DATEDIFF(
-        p.expiry_date,
-        CURDATE()
-      ) AS days_left
- 
+      SUM(pv.stock) AS stock,
+      MIN(pv.variant_label) AS variant_label,
+
+      p.deal_discount,
+      p.deal_expires_at
+
     FROM products p
- 
+
     JOIN product_variants pv
       ON pv.product_id = p.id
- 
-    JOIN categories c
-      ON c.id = p.category_id
- 
+
     WHERE
       p.active = 1
-      AND p.expiry_date IS NOT NULL
-      AND c.name IN (
-        'Fruits',
-        'Vegetables',
-        'Dairy',
-        'Meat, Fish & Eggs'
-      )
- 
+      AND p.today_deal = 1
+
     GROUP BY p.id
- 
+
     HAVING
       SUM(pv.stock) > 0
-      AND DATEDIFF(
-        p.expiry_date,
-        CURDATE()
-      ) BETWEEN 0 AND 3
- 
-    ORDER BY days_left ASC
+
+    ORDER BY p.id DESC
   `;
+  break;
   break;
         /* 🟣 OFFER ZONE (EXPIRY) */
       case "offer-zone":

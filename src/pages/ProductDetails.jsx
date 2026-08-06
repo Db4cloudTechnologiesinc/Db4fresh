@@ -60,13 +60,42 @@ export default function ProductDetails() {
   }, [id]);
 
   if (!product) return null;
-const price = selectedVariant?.price ?? product.price ?? 0;
-const mrp = selectedVariant?.mrp ?? product.mrp ?? null;
+const price = Number(selectedVariant?.price ?? product.price ?? 0);
+const mrp = Number(selectedVariant?.mrp ?? product.mrp ?? 0);
 
-const discount =
+// ================= EXPIRY DISCOUNT =================
+const today = new Date();
+
+const expiry = product.expiry_date
+  ? new Date(product.expiry_date)
+  : null;
+
+let diffDays = null;
+let expiryDiscount = 0;
+
+if (expiry) {
+  const diffTime = expiry - today;
+  diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 1) expiryDiscount = 60;
+  else if (diffDays <= 2) expiryDiscount = 50;
+  else if (diffDays <= 3) expiryDiscount = 30;
+}
+
+// ================= MRP DISCOUNT =================
+const mrpDiscount =
   mrp && mrp > price
     ? Math.round(((mrp - price) / mrp) * 100)
     : 0;
+
+// ================= FINAL DISCOUNT =================
+const discount = Math.max(mrpDiscount, expiryDiscount);
+
+// ================= FINAL PRICE =================
+const finalPrice =
+  discount > 0
+    ? Math.round(price - (price * discount) / 100)
+    : price;
   const isWishlisted = wishlist.some(
     (i) => i.productId === product.id
   );
@@ -275,26 +304,26 @@ const discount =
 <div className="flex items-center gap-3 mt-2">
 
   <span className="text-3xl font-bold text-green-600">
-    ₹{price}
-  </span>
+  ₹{finalPrice}
+</span>
 
-  {mrp && mrp > price && (
-    <>
-      <span className="text-xl text-gray-400 line-through">
-        ₹{mrp}
-      </span>
+{discount > 0 && (
+  <>
+    <span className="text-xl text-gray-400 line-through">
+      ₹{price}
+    </span>
 
-      <span className="text-green-600 text-sm font-semibold">
-        {discount}% OFF
-      </span>
-    </>
-  )}
+    <span className="text-green-600 text-sm font-semibold">
+      {discount}% OFF
+    </span>
+  </>
+)}
 
 </div>
 
-{mrp && mrp > price && (
+{discount > 0 && (
   <p className="text-green-600 text-sm">
-    You save ₹{mrp - price}
+    You save ₹{price - finalPrice}
   </p>
 )}
 
@@ -360,7 +389,7 @@ const discount =
   productId={product.id}
  variantId={selectedVariant?.id ?? null}
   name={product.name}
-  price={selectedVariant?.price ?? product.price}
+  price={finalPrice}
   image={mainImage}
   variantLabel={selectedVariant?.variant_label}
   stock={selectedVariant?.stock ?? product.stock}

@@ -71,7 +71,8 @@ export default function Auth() {
       });
 
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+localStorage.setItem("refreshToken", res.data.refreshToken);
+localStorage.setItem("user", JSON.stringify(res.data.user));
       dispatch(setCart(res.data.cart || []));
       const savedCart = localStorage.getItem("savedCart");
 

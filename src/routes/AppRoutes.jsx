@@ -53,6 +53,7 @@ import AdminPriceUpdate from "../Admin/AdminPriceUpdate";
 import BulkPriceUpdate from "../Admin/BulkPriceUpdate";
 import Offers from "../Admin/Offers";
 import SupportRequests from "../Admin/SupportRequests";
+import TodaysDealAdmin from "../Admin/TodaysDealAdmin";
 
 import DeliveryApp from "../db4fresh_delivery/DeliveryApp";
 
@@ -101,6 +102,10 @@ export default function AppRoutes() {
           <Route path="orders" element={<Orders />} />
           <Route path="support" element={<SupportRequests />} />
           <Route path="offers" element={<Offers />} />
+          <Route
+  path="todays-deal"
+  element={<TodaysDealAdmin />}
+/>
           <Route path="orders/:id" element={<AdminOrderDetails />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:id" element={<UserDetails />} />

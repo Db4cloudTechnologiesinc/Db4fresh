@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/api";
 import AddressModal from "./AddressModal";
 
 export default function AddressSection({ onClose, onSelect }) {
@@ -12,12 +12,7 @@ console.log("Token:", token);
   /* ================= LOAD ADDRESSES ================= */
   const loadAddresses = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:4000/api/addresses",
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const res = await api.get("/addresses");
       setAddresses(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Load address error:", err);
@@ -33,12 +28,7 @@ console.log("Token:", token);
     if (!window.confirm("Delete this address?")) return;
 
     try {
-      await axios.delete(
-        `http://localhost:4000/api/addresses/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      await api.delete(`/addresses/${id}`);
 
       // 🔥 instant UI update
       setAddresses((prev) => prev.filter((a) => a.id !== id));

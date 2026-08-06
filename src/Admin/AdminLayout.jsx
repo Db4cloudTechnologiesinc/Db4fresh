@@ -111,6 +111,12 @@ export default function AdminLayout() {
   label="Offers"
   active={isActive("/admin/offers")}
 />
+<SidebarItem
+  to="/admin/todays-deal"
+  icon={<FiGift />}
+  label="Today's Deal"
+  active={isActive("/admin/todays-deal")}
+/>
 
           <SidebarItem
             to="/admin/stock"

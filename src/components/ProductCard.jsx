@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,44 +10,66 @@ import AddToCartButton from "./AddToCartButton";
 
 /* IMAGE HELPER */
 const getImageUrl = (p) => {
-  // ✅ HANDLE STRINGIFIED JSON (YOUR CASE)
+  // Handle stringified JSON
   if (p.images && typeof p.images === "string") {
     try {
       const parsed = JSON.parse(p.images);
+
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0].url; // ✅ Cloudinary URL
+        let url = parsed[0].url || "";
+
+        if (!url) return "/placeholder.png";
+
+        // Already full URL (Cloudinary / localhost)
+        if (url.startsWith("http")) {
+          return url;
+        }
+
+        // Relative path
+        return `http://localhost:4000${url}`;
       }
     } catch (e) {
       console.error("Image parse error", e);
     }
   }
 
-  // ✅ HANDLE NORMAL ARRAY
+  // Handle array
   if (Array.isArray(p.images) && p.images.length > 0) {
-    const img = p.images[0];
-    if (img.url) return img.url;
+    let url = p.images[0].url || "";
+
+    if (!url) return "/placeholder.png";
+
+    if (url.startsWith("http")) {
+      return url;
+    }
+
+    return `http://localhost:4000${url}`;
   }
 
-  // ✅ FALLBACK (LOCAL IMAGE)
+  // Handle image column
   if (p.image) {
+    if (p.image.startsWith("http")) {
+      return p.image;
+    }
+
     return `http://localhost:4000${p.image.startsWith("/") ? "" : "/"}${p.image}`;
   }
 
   return "/placeholder.png";
 };
-export default function ProductCard({ p , subcategoryName}) {
+
+export default function ProductCard({ p, subcategoryName }) {
   const dispatch = useDispatch();
   const wishlist = useSelector((s) => s.wishlist.items);
 
   if (!p?.id) return null;
-console.log("PRODUCT:", p);
+
   const img = getImageUrl(p);
+
   const stock = Number(p.stock || 0);
   const price = Number(p.price || 0);
   const mrp = p.mrp || null;
   const variantLabel = p.variant_label || "";
-
-  /* ================= COMBINED LOGIC ================= */
 
   const today = new Date();
   const expiry = p.expiry_date ? new Date(p.expiry_date) : null;
@@ -65,22 +86,17 @@ console.log("PRODUCT:", p);
     else if (diffDays <= 3) expiryDiscount = 30;
   }
 
-  // ✅ Existing MRP discount (KEEP THIS)
   const mrpDiscount =
     mrp && mrp > price
       ? Math.round(((mrp - price) / mrp) * 100)
       : 0;
 
-  // ✅ Final discount (take best)
   const finalDiscount = Math.max(mrpDiscount, expiryDiscount);
 
-  // ✅ Final price
   const finalPrice =
     finalDiscount > 0
       ? Math.round(price - (price * finalDiscount) / 100)
       : price;
-
-  /* ================= WISHLIST ================= */
 
   const isWishlisted = wishlist.some(
     (i) => i.productId === p.id
@@ -108,36 +124,32 @@ console.log("PRODUCT:", p);
   return (
     <div className="relative bg-white rounded-xl shadow hover:shadow-md transition p-3 w-[200px]">
 
-      {/* IMAGE */}
       <Link
-  to={`/product/${p.id}`}
-  state={{
-    subcategoryName,
-  }}
->
-  {p.buy_qty && p.free_qty && (
-  <div className="absolute top-2 left-2 z-20 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">
-  BUY {Number(p.buy_qty)} GET {Number(p.free_qty)}
-</div>
+        to={`/product/${p.id}`}
+        state={{
+          subcategoryName,
+        }}
+      >
+        {p.buy_qty && p.free_qty && (
+          <div className="absolute top-2 left-2 z-20 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded">
+            BUY {Number(p.buy_qty)} GET {Number(p.free_qty)}
+          </div>
+        )}
 
-)}
         <div className="relative h-[150px] flex items-center justify-center mb-2">
 
-          {/* 🔴 Expiry Badge */}
           {expiryDiscount > 0 && diffDays !== null && (
             <div className="absolute top-1 left-1 bg-red-100 text-red-600 text-[10px] px-2 py-[2px] rounded">
               {diffDays <= 1 ? "Expires Today" : `Expires in ${diffDays}d`}
             </div>
           )}
 
-          {/* 🔵 Discount Badge */}
           {finalDiscount > 0 && (
             <div className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold px-2 py-[2px] rounded">
               {finalDiscount}% OFF
             </div>
           )}
 
-          {/* 🧡 Wishlist */}
           <button
             onClick={handleWishlist}
             className="absolute top-2 left-2 bg-white rounded-full p-1 shadow"
@@ -158,19 +170,16 @@ console.log("PRODUCT:", p);
         </div>
       </Link>
 
-      {/* NAME */}
       <h3 className="text-sm font-semibold mt-2 line-clamp-2">
         {p.name}
       </h3>
 
-      {/* VARIANT */}
       {variantLabel && (
         <p className="text-xs text-gray-500 mt-[2px]">
           {variantLabel}
         </p>
       )}
 
-      {/* PRICE */}
       <div className="flex items-center gap-2 mt-1">
         <span className="text-lg font-bold text-black">
           ₹{finalPrice}
@@ -181,10 +190,8 @@ console.log("PRODUCT:", p);
             ₹{price}
           </span>
         )}
-
       </div>
 
-      {/* ADD TO CART */}
       <div className="mt-auto">
         {stock > 0 ? (
           <AddToCartButton
@@ -192,7 +199,7 @@ console.log("PRODUCT:", p);
             name={p.name}
             price={finalPrice}
             image={img}
-           variantId={p.variant_id}
+            variantId={p.variant_id}
             variantLabel={variantLabel}
             stock={stock}
           />

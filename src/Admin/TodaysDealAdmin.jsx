@@ -170,14 +170,25 @@ export default function TodaysDealAdmin() {
 
   if (loading) return <p className="p-6">Loading...</p>;
 
-  const dealProducts = products.filter(
-  (p) => Number(p.today_deal) === 1
-);
+  const dealProducts = products.filter((p) => {
+  if (Number(p.today_deal) !== 1) return false;
+
+  if (!p.deal_expires_at) return true;
+
+  return new Date(p.deal_expires_at) > new Date();
+});
 
   const nonDealProducts = products
-  .filter((p) => Number(p.today_deal) !== 1)
-    .filter((p) => (search ? p.name.toLowerCase().includes(search.toLowerCase()) : true));
+  .filter((p) => {
+    const expired =
+      p.deal_expires_at &&
+      new Date(p.deal_expires_at) <= new Date();
 
+    return Number(p.today_deal) !== 1 || expired;
+  })
+  .filter((p) =>
+    search ? p.name.toLowerCase().includes(search.toLowerCase()) : true
+  );
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="mb-6">

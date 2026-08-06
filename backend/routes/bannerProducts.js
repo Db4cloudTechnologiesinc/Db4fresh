@@ -68,7 +68,8 @@ router.get("/:type", async (req, res) => {
 
     
     /* 🟠 TODAY DEAL */
-    case "todays-deal":
+    /* 🟠 TODAY DEAL */
+case "todays-deal":
   query = `
     SELECT
       p.id,
@@ -77,6 +78,7 @@ router.get("/:type", async (req, res) => {
       p.image,
       p.images,
 
+      MIN(pv.id) AS variant_id,
       MIN(pv.price) AS price,
       MIN(pv.mrp) AS mrp,
       SUM(pv.stock) AS stock,
@@ -93,6 +95,10 @@ router.get("/:type", async (req, res) => {
     WHERE
       p.active = 1
       AND p.today_deal = 1
+      AND (
+        p.deal_expires_at IS NULL
+        OR p.deal_expires_at > NOW()
+      )
 
     GROUP BY p.id
 
@@ -102,7 +108,7 @@ router.get("/:type", async (req, res) => {
     ORDER BY p.id DESC
   `;
   break;
-  break;
+  
         /* 🟣 OFFER ZONE (EXPIRY) */
       case "offer-zone":
         query = baseQuery + `
@@ -207,6 +213,7 @@ MIN(pv.variant_label) AS variant_label,
     }
 
     const [rows] = await db.query(query);
+    console.log(rows);
     res.json(rows);
 
   } catch (error) {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -70,6 +70,44 @@ export default function ProductCard({ p, subcategoryName }) {
   const price = Number(p.price || 0);
   const mrp = p.mrp || null;
   const variantLabel = p.variant_label || "";
+  /* ================= TODAY DEAL COUNTDOWN ================= */
+
+const [timeLeft, setTimeLeft] = useState("");
+
+useEffect(() => {
+  if (!p.deal_expires_at) return;
+
+  const updateTimer = () => {
+    const now = new Date();
+    const expiry = new Date(p.deal_expires_at);
+
+    const diff = expiry - now;
+
+    if (diff <= 0) {
+      setTimeLeft("");
+      return;
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours <= 12) {
+      if (hours >= 1) {
+        setTimeLeft(`Expires in ${hours} hr`);
+      } else {
+        setTimeLeft(`Expires in ${minutes} min`);
+      }
+    } else {
+      setTimeLeft("");
+    }
+  };
+
+  updateTimer();
+
+  const timer = setInterval(updateTimer, 60000);
+
+  return () => clearInterval(timer);
+}, [p.deal_expires_at]);
 
   const today = new Date();
   const expiry = p.expiry_date ? new Date(p.expiry_date) : null;
@@ -138,11 +176,11 @@ export default function ProductCard({ p, subcategoryName }) {
 
         <div className="relative h-[150px] flex items-center justify-center mb-2">
 
-          {expiryDiscount > 0 && diffDays !== null && (
-            <div className="absolute top-1 left-1 bg-red-100 text-red-600 text-[10px] px-2 py-[2px] rounded">
-              {diffDays <= 1 ? "Expires Today" : `Expires in ${diffDays}d`}
-            </div>
-          )}
+          {timeLeft && (
+  <div className="absolute top-1 left-1 bg-red-600 text-white text-[10px] font-semibold px-2 py-1 rounded">
+  {timeLeft}
+</div>
+)}
 
           {finalDiscount > 0 && (
             <div className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold px-2 py-[2px] rounded">

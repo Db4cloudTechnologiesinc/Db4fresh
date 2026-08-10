@@ -5,6 +5,8 @@ export default function TodaysDealAdmin() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+const productsPerPage = 20;
   const [busyId, setBusyId] = useState(null);
   const [syncAt, setSyncAt] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -301,7 +303,12 @@ export default function TodaysDealAdmin() {
             </tr>
           </thead>
           <tbody>
-            {nonDealProducts.slice(0, 20).map((p) => {
+            {nonDealProducts
+  .slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  )
+  .map((p) => {
               const draft = getDraft(p.id);
               return (
                 <tr key={p.id} className="border-b hover:bg-gray-50">
@@ -353,11 +360,26 @@ export default function TodaysDealAdmin() {
           </tbody>
         </table>
 
-        {nonDealProducts.length > 20 && (
-          <p className="text-xs text-gray-400 p-3">
-            Showing first 20 results — refine your search to narrow further.
-          </p>
-        )}
+        <div className="flex justify-center gap-2 p-4 flex-wrap">
+  {Array.from(
+    {
+      length: Math.ceil(nonDealProducts.length / productsPerPage),
+    },
+    (_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 rounded ${
+          currentPage === i + 1
+            ? "bg-blue-600 text-white"
+            : "bg-gray-200"
+        }`}
+      >
+        {i + 1}
+      </button>
+    )
+  )}
+</div>
       </div>
     </div>
   );

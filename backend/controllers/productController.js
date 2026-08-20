@@ -4047,12 +4047,67 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
  
 /* ================= DELETE PRODUCT ================= */
 export const deleteProduct = async (req, res) => {
-await db.query(
-  "DELETE FROM product_variants WHERE product_id = ?",
-  [req.params.id]
-);
-await db.query("DELETE FROM products WHERE id = ?", [req.params.id]);
-res.json({ message: "Product deleted" });
+  const connection = await db.getConnection();
+
+  try {
+    const productId = req.params.id;
+
+    console.log("DELETE PRODUCT ID:", productId);
+
+    await connection.beginTransaction();
+
+    // 1. Delete product prices belonging to this product's variants
+    await connection.query(
+      `DELETE pp
+       FROM product_prices pp
+       INNER JOIN product_variants pv
+       ON pp.variant_id = pv.id
+       WHERE pv.product_id = ?`,
+      [productId]
+    );
+
+    // 2. Delete product variants
+    await connection.query(
+      "DELETE FROM product_variants WHERE product_id = ?",
+      [productId]
+    );
+
+    // 3. Delete the product
+    const [result] = await connection.query(
+      "DELETE FROM products WHERE id = ?",
+      [productId]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
+
+  } catch (err) {
+    await connection.rollback();
+
+    console.error("DELETE PRODUCT ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete product",
+      error: err.message,
+    });
+
+  } finally {
+    connection.release();
+  }
 };
  
 /* ================= EXTRA ================= */

@@ -19,7 +19,11 @@ import ReviewsSection from "../components/ReviewSection";
 import SimilarProducts from "../components/SimilarProducts";
 import SuggestedProducts from "../components/SuggestedProducts";
 
-
+const isQuantityVariant = (label = "") => {
+  return /(?:^|\s|-)\d+(?:\.\d+)?\s*(kg|kgs|g|gm|gms|gram|grams|l|lt|ltr|ml|milliliter|milliliters|pack|packs|pc|pcs|piece|pieces|dozen|box|boxes)\b/i.test(
+    label.trim()
+  );
+};
 export default function ProductDetails() {
   const { id } = useParams();
   const dispatch = useDispatch();
@@ -333,7 +337,14 @@ const finalPrice =
           {/* VARIANT SELECTOR */}
 {product.variants?.length > 0 && (
   <div>
-    <p className="font-medium mb-2">Select Quantity</p>
+    <p className="font-medium mb-2">
+  {product.variants?.length > 0 &&
+  product.variants.every((v) =>
+    isQuantityVariant(v.variant_label || "")
+  )
+    ? "Select Quantity"
+    : "Select Variant/Type"}
+</p>
     <div className="flex gap-3 flex-wrap">
       {product.variants.map((v) => (
         <button

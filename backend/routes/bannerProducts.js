@@ -259,15 +259,22 @@ router.get("/:type", async (req, res) => {
          🟡 SUPER STORE
          Existing Super Store + ALL FRUITS + VEGETABLES
       ===================================================== */
+            /* =====================================================
+         🟡 SUPER STORE
+         Existing Super Store + ALL FRUITS + VEGETABLES
+         Show the LARGEST QUANTITY variant for each product
+      ===================================================== */
       case "super-store":
         query = `
           SELECT
             p.*,
-            MIN(pv.id) AS variant_id,
-            MIN(pv.price) AS price,
-            SUM(pv.stock) AS stock,
-            MIN(pv.mrp) AS mrp,
-            MIN(pv.variant_label) AS variant_label
+            pv.id AS variant_id,
+            pv.price,
+            pv.stock,
+            pv.mrp,
+            pv.variant_label,
+            pv.quantity,
+            pv.unit
 
           FROM products p
 
@@ -284,24 +291,59 @@ router.get("/:type", async (req, res) => {
 
             AND
             (
-              /* Existing Super Store logic */
-              (
-                (pv.unit = 'kg' AND pv.quantity >= 3)
-                OR
-                (pv.unit = 'l' AND pv.quantity >= 3)
-                OR
-                (pv.unit = 'pack' AND pv.quantity >= 12)
+              /* Existing Super Store products */
+              EXISTS (
+                SELECT 1
+                FROM product_variants pv2
+                WHERE pv2.product_id = p.id
+                  AND pv2.stock > 0
+                  AND (
+                    (pv2.unit = 'kg' AND pv2.quantity >= 3)
+                    OR
+                    (pv2.unit = 'l' AND pv2.quantity >= 3)
+                    OR
+                    (pv2.unit = 'pack' AND pv2.quantity >= 12)
+                  )
               )
 
               OR
 
               /* ALL Fruits and Vegetables */
-              (
-                c.name IN ('Fruits', 'Vegetables')
-              )
+              c.name IN ('Fruits', 'Vegetables')
             )
 
-          GROUP BY p.id
+            /* Select ONLY the largest quantity variant */
+            AND pv.id = (
+              SELECT pv2.id
+              FROM product_variants pv2
+              WHERE pv2.product_id = p.id
+                AND pv2.stock > 0
+
+              ORDER BY
+                CASE
+                  WHEN LOWER(pv2.unit) IN ('kg', 'kilogram', 'kilograms')
+                    THEN pv2.quantity * 1000
+
+                  WHEN LOWER(pv2.unit) IN ('g', 'gm', 'gram', 'grams')
+                    THEN pv2.quantity
+
+                  WHEN LOWER(pv2.unit) IN ('l', 'litre', 'liter', 'litres', 'liters')
+                    THEN pv2.quantity * 1000
+
+                  WHEN LOWER(pv2.unit) IN ('ml', 'millilitre', 'milliliter', 'millilitres', 'milliliters')
+                    THEN pv2.quantity
+
+                  WHEN LOWER(pv2.unit) IN ('pack', 'packs')
+                    THEN pv2.quantity
+
+                  ELSE pv2.quantity
+                END DESC,
+
+                pv2.id DESC
+
+              LIMIT 1
+            )
+
           ORDER BY p.id DESC
         `;
         break;

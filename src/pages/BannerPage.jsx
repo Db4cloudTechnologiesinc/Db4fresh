@@ -589,24 +589,81 @@ function BannerPage() {
   /* ===============================
      GROUP PRODUCTS BY CATEGORY
   ================================ */
-  const groupedCategories = categories
-    .map((category) => {
-      const categoryProducts =
-        filteredProducts.filter(
-          (product) =>
-            Number(product.category_id) ===
-            Number(category.id)
-        );
+  /* ===============================
+   GROUP PRODUCTS BY CATEGORY
+   Required order:
+   1. Vegetables
+   2. Fruits
+   3. Groceries
+   4. Remaining categories
+================================ */
 
-      return {
-        ...category,
-        products: categoryProducts,
-      };
-    })
-    .filter(
-      (category) =>
-        category.products.length > 0
-    );
+let groupedCategories = categories
+  .map((category) => {
+    const categoryProducts =
+      filteredProducts.filter(
+        (product) =>
+          Number(product.category_id) ===
+          Number(category.id)
+      );
+
+    return {
+      ...category,
+      products: categoryProducts,
+    };
+  })
+  .filter(
+    (category) =>
+      category.products.length > 0
+  );
+
+/* =================================
+   REARRANGE ONLY THE 4 BANNER MODULES
+   50% OFF remains unchanged
+================================= */
+
+if (type !== "50-off") {
+  const priorityOrder = [
+    "vegetables",
+    "fruits",
+    "groceries",
+  ];
+
+  groupedCategories.sort((a, b) => {
+    const aName = String(a.name || "")
+      .trim()
+      .toLowerCase();
+
+    const bName = String(b.name || "")
+      .trim()
+      .toLowerCase();
+
+    const aIndex =
+      priorityOrder.indexOf(aName);
+
+    const bIndex =
+      priorityOrder.indexOf(bName);
+
+    /*
+      Priority categories come first.
+      All other categories stay after them.
+    */
+
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    }
+
+    if (aIndex !== -1) {
+      return -1;
+    }
+
+    if (bIndex !== -1) {
+      return 1;
+    }
+
+    return 0;
+  });
+}
 
   /* ===============================
      PRODUCTS WITHOUT CATEGORY
